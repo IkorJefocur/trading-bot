@@ -6,11 +6,11 @@ name = "pypi"
 [packages]
 flask = "*"
 python-telegram-bot = "*"
-python-dotenv = "*"
 pybit = "*"
 aiogram = "*"
 
 [dev-packages]
+python-dotenv = "*"
 
 [requires]
 python_version = "3.8"
