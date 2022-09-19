@@ -1,2 +1,3 @@
-#!/bin/sh
-authbind pipenv run python3 prod.py
+#!/bin/bash
+echo -e "\n---------- $(date) ----------\n" >> log.txt
+authbind pipenv run python prod 2>&1 | tee --append log.txt
