@@ -1,2 +1,2 @@
 #!/bin/sh
-authbind python3 prod
+authbind pipenv run python3 prod.py
