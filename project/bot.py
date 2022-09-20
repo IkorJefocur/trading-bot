@@ -8,18 +8,19 @@ class Bot:
 
 		self.dispatcher = Dispatcher(TelegramBot(**telegram_params))
 
-	def format_message(self, data):
+	def format_message(self, order):
 		return \
-			f"{data['side']}\n" \
-			+ f"Time - {data['time']}\n" \
-			+ f"Coin - {data['coin']}\n" \
-			+ f"Close - {data['close']}\n" \
-			+ f"High - {data['high']}, Low - {data['low']}\n" \
-			+ f"TF - {data['TF']}"
+			f"{'BUY' if order.buy else 'SELL'}\n" \
+			+ f"Coin - {order.coin}\n" \
+			+ f"Time - {order.time}\n" \
+			+ f"Close - {order.close}\n" \
+			+ f"Low - {order.low}\n" \
+			+ f"High - {order.high}\n" \
+			+ f"TF - {order.tf}"
 
-	async def send(self, data):
+	async def send(self, order):
 		bot = self.dispatcher.bot
-		message = self.format_message(data)
+		message = self.format_message(order)
 
 		await gather(*(
 			bot.send_message(chat_id, message) for chat_id in self.chats

@@ -1,4 +1,6 @@
+from datetime import datetime
 from flask import Flask, request, abort
+from .order import Order
 
 class Server:
 
@@ -34,8 +36,33 @@ class Server:
 		if not request.is_json:
 			abort(400)
 
-		data = request.json
-		for receiver in self.receivers:
-			receiver(data)
+		try:
+			order = self.parse_order(request.json)
+		except TypeError:
+			abort(400)
 
-		return '', 204
+		else:
+			for receiver in self.receivers:
+				receiver(order)
+			return '', 204
+
+	def parse_order(self, data):
+		try:
+			side = data['side'].lower()
+			coin = data['coin']
+			time = datetime.fromisoformat(data['time'].replace('Z', '+00:00'))
+			close = float(data['close'])
+			low = float(data['low'])
+			high = float(data['high'])
+			tf = int(data['TF'])
+
+			if not (
+				(side == 'buy' or side == 'sell')
+				and type(coin) == str
+			):
+				raise Exception()
+
+			return Order(side, coin, time, close, low, high, tf)
+
+		except Exception as e:
+			raise TypeError('Incorrect order json')
