@@ -14,7 +14,12 @@ def run(server, bot):
 	bot_thread.start()
 
 	def bridge(data):
-		run_coroutine_threadsafe(bot.send(data), bot_loop)
+		run_coroutine_threadsafe(bot.send(data), bot_loop) \
+			.add_done_callback(propagate_future_exception)
 	server.add_receiver(bridge)
 
 	bot_thread.join()
+
+def propagate_future_exception(future):
+	if future.exception():
+		raise future.exception()
