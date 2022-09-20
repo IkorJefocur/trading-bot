@@ -6,5 +6,5 @@ load_dotenv()
 
 run(
 	Server(allowed_ips = ['127.0.0.1']),
-	Bot(token = environ['TELEGRAM_TOKEN'], chats = ['-1001772890507'])
+	Bot(token = environ['TELEGRAM_TOKEN'], chats = [environ['TELEGRAM_CHAT']])
 )
