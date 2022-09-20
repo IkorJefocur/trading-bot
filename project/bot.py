@@ -12,10 +12,10 @@ class Bot:
 		return \
 			f"{'BUY' if order.buy else 'SELL'}\n" \
 			+ f"Coin - {order.coin}\n" \
-			+ f"Time - {order.time}\n" \
-			+ f"Close - {order.close}\n" \
-			+ f"Low - {order.low}\n" \
-			+ f"High - {order.high}\n" \
+			+ f"Time - {order.time.strftime('%d.%m.%Y %H:%M:%S %Z')}\n" \
+			+ f"Close - {order.close:g}\n" \
+			+ f"Low - {order.low:g}\n" \
+			+ f"High - {order.high:g}\n" \
 			+ f"TF - {order.tf}"
 
 	async def send(self, order):
