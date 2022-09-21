@@ -1,62 +1,50 @@
+from math import floor
 from asyncio import sleep
 from pybit import usdt_perpetual
 
-# order_params = {
-# 	'side' :"Buy",
-# 	'coin' : "BTCUSDT",
-# 	'close': 20000,
-# 	'pivot': 18600
-# }
-
 class Trade:
 
-	def __init__(self, endpoint, api_key, api_secret):
+	def __init__(self, endpoint, key, secret):
 		self.endpoint = endpoint
-		self.api_key = api_key
-		self.api_secret = api_secret
+		self.key = key
+		self.secret = secret
 
-	async def make_order(
-		self, order_side, order_coin, order_last_close, order_last_pivot
-	):
-		print(f'{order_side} signal')
-		justopenedorders = list()
-		order_candle_shadow = order_last_close - order_last_pivot
-		order_stepsize = int(order_candle_shadow / 3 * 0.95)
-		session = usdt_perpetual.HTTP(
+		self.usdt_perpetual = usdt_perpetual.HTTP(
 			endpoint = self.endpoint,
-			api_key = self.api_key,
-			api_secret = self.api_secret
+			api_key = self.key,
+			api_secret = self.secret
 		)
-		depo = session.get_wallet_balance(coin="USDT") \
+
+	async def make_order(self, order):
+		session = self.usdt_perpetual
+
+		depo = session.get_wallet_balance(coin = 'USDT') \
 			['result']['USDT']['wallet_balance']
-		usdt_quanty = (depo / order_last_close / 100 * 1)
-		print(depo)
-		print(usdt_quanty)
-		for order_step in range(4):
-			order_candle_shadow = order_last_close - order_last_pivot
-			order_stepsize = int(order_candle_shadow / 3 * 0.95)
-			order_entry = order_last_close - order_stepsize * order_step
+		usdt_quanty = round(depo / order.close / 100)
+		if usdt_quanty == 0:
+			return
+
+		just_opened_orders = []
+		stepsize = floor(order.candle_shadow / 3 * .95)
+
+		for step in range(4):
+			entry = order.close - stepsize * step
 			buy_limit = session.place_active_order(
-				symbol = order_coin,
-				side = order_side,
-				order_type = "Limit",
-				qty = round(usdt_quanty,3),
-				price = order_entry,
-				take_profit = order_entry / 100 * (order_step + 1) + order_entry,
-				time_in_force = "GoodTillCancel",
+				symbol = order.coin, # Если coin не поддерживается?
+				side = 'Buy' if order.buy else 'Sell',
+				order_type = 'Limit',
+				qty = usdt_quanty, # Если запредельное значение?
+				price = entry,
+				take_profit = round(entry / 100 * (step + 1) + entry, 3),
+				time_in_force = 'GoodTillCancel',
 				reduce_only = False,
 				close_on_trigger = False,
-				is_isolated = 'true',
+				is_isolated = True,
 				leverage = 5
 			)
-			print(order_entry / 100 * (order_step +1) + order_entry)
-			buy_limit
-			orderid = buy_limit['result']['order_id']
-			print(buy_limit['result']['price'])
-			justopenedorders.append(orderid)
-		print(justopenedorders)
+			just_opened_orders.append(buy_limit['result']['order_id'])
+
 		await sleep(10)
-		print(f'orders timed out {len(justopenedorders)}')
-		for i in range(len(justopenedorders)):
-			session.cancel_all_active_orders(symbol="BTCUSDT")
-			print('timedout order deleted')
+
+		for order_id in just_opened_orders:
+			session.cancel_active_order(symbol = 'BTCUSDT', order_id = order_id)
