@@ -47,4 +47,4 @@ class Trade:
 		await sleep(10)
 
 		for order_id in just_opened_orders:
-			session.cancel_active_order(symbol = 'BTCUSDT', order_id = order_id)
+			session.cancel_active_order(symbol = order.coin, order_id = order_id)
