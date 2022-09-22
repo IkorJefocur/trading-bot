@@ -30,10 +30,10 @@ class Trade:
 		for step in range(4):
 			entry = order.close - stepsize * step
 			buy_limit = session.place_active_order(
-				symbol = order.coin, # Если coin не поддерживается?
+				symbol = order.coin,
 				side = 'Buy' if order.buy else 'Sell',
 				order_type = 'Limit',
-				qty = usdt_quanty, # Если запредельное значение?
+				qty = usdt_quanty,
 				price = entry,
 				take_profit = round(entry / 100 * (step + 1) + entry, 3),
 				time_in_force = 'GoodTillCancel',
