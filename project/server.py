@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import timedelta, datetime
 from flask import Flask, request, abort
 from .order import Order
 
@@ -54,11 +54,15 @@ class Server:
 			close = float(data['close'])
 			low = float(data['low'])
 			high = float(data['high'])
-			tf = int(data['TF'])
+			tf = timedelta(minutes = int(data['TF']))
 
 			if not (
 				(side == 'buy' or side == 'sell')
 				and type(coin) == str
+				and close > 0
+				and low > 0
+				and high > 0
+				and tf > timedelta()
 			):
 				raise Exception()
 
