@@ -5,7 +5,7 @@ from project import run, Server, Trade, Bot
 load_dotenv()
 
 run(
-	Server(allowed_ips = ['127.0.0.1']),
+	Server(local = True),
 	Trade(
 		endpoint = 'https://api-testnet.bybit.com',
 		key = environ['BYBIT_KEY'], secret = environ['BYBIT_SECRET']

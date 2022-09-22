@@ -1,12 +1,8 @@
 from os import environ
 from project import run, Server, Trade, Bot
 
-class ParametrizedServer(Server):
-	def run(self):
-		super().run(host = '0.0.0.0', port = 80)
-
 run(
-	ParametrizedServer(),
+	Server(),
 	Trade(
 		endpoint = 'https://api-testnet.bybit.com',
 		key = environ['BYBIT_KEY'], secret = environ['BYBIT_SECRET']

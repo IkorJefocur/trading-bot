@@ -6,17 +6,22 @@ class Server:
 
 	def __init__(
 		self,
-		allowed_ips = [
-			'52.89.214.238',
-			'34.212.75.30',
-			'54.218.53.128',
-			'52.32.178.7'
-		],
+		local = False,
+		allowed_ips = None,
 		name = __name__,
 		**flask_params
 	):
 		self.receivers = set()
-		self.allowed_ips = allowed_ips
+		self.local = local
+
+		self.allowed_ips = allowed_ips or ([
+			'127.0.0.1'
+		] if local else [
+			'52.89.214.238',
+			'34.212.75.30',
+			'54.218.53.128',
+			'52.32.178.7'
+		])
 
 		self.app = Flask(name, **flask_params)
 		self.app.route('/', methods=['POST'])(self.handle_webhook)
@@ -27,8 +32,13 @@ class Server:
 	def remove_receiver(self, reciever):
 		self.recievers.remove(receiver)
 
-	def run(self, *args, **kwargs):
-		self.app.run(*args, **kwargs)
+	def run(self, *args, host = None, port = None, **kwargs):
+		self.app.run(
+			*args,
+			host = host or (None if self.local else '0.0.0.0'),
+			port = port or (3000 if self.local else 80),
+			**kwargs
+		)
 
 	def handle_webhook(self):
 		if request.remote_addr not in self.allowed_ips:
