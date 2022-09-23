@@ -27,24 +27,42 @@ class Trade:
 		just_opened_orders = []
 		stepsize = floor(order.candle_shadow / 3 * .95)
 
-		for step in range(4):
-			entry = order.close - stepsize * step
-			buy_limit = session.place_active_order(
-				symbol = order.coin,
-				side = 'Buy' if order.buy else 'Sell',
-				order_type = 'Limit',
-				qty = usdt_quanty,
-				price = entry,
-				take_profit = round(entry / 100 * (step + 1) + entry, 3),
-				time_in_force = 'GoodTillCancel',
-				reduce_only = False,
-				close_on_trigger = False,
-				is_isolated = True,
-				leverage = 5
-			)
+		#for step in range(4):
+			#entry = order.close - stepsize * step
+			#buy_limit = session.place_active_order(
+			#	symbol = order.coin,
+			#	side = 'Buy' if order.buy else 'Sell',
+			#	order_type = 'Limit',
+			#	qty = usdt_quanty,
+			#	price = entry,
+			#	take_profit = round(entry / 100 * (step + 1) + entry, 3),
+			#	time_in_force = 'GoodTillCancel',
+			#	reduce_only = False,
+			#	close_on_trigger = False,
+			#	is_isolated = True,
+			#	leverage = 5
+			#)
 			just_opened_orders.append(buy_limit['result']['order_id'])
-
-		await sleep(10)
-
-		for order_id in just_opened_orders:
-			session.cancel_active_order(symbol = order.coin, order_id = order_id)
+		buy_limit = session.place_active_order(
+			symbol = order.coin,
+			side = 'Buy' if order.buy else 'Sell',
+			order_type = 'Market',
+			qty = 0.1,
+			time_in_force = 'GoodTillCancel',
+			reduce_only = False,
+			close_on_trigger = True			
+			)
+		close_on_trigger
+		entry = order.close
+		buy_limit = session.place_active_order(
+			symbol = order.coin,
+			side = 'Buy' if order.buy else 'Sell',
+			order_type = 'Market',
+			qty = 0.1,
+			take_profit = round(entry / 1000 * , 3),
+			time_in_force = 'GoodTillCancel',
+			reduce_only = False,
+			close_on_trigger = False			
+			)
+		await sleep(60)
+		session.cancel_active_order(symbol = order.coin, order_id = order_id)
