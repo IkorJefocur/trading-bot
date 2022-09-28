@@ -1,10 +1,13 @@
 from math import floor
-from asyncio import sleep
+from asyncio import sleep, get_running_loop
+from concurrent.futures import ThreadPoolExecutor
 from pybit import usdt_perpetual
 
 class Trade:
 
 	def __init__(self, endpoint, key, secret):
+		self.executor = ThreadPoolExecutor()
+
 		self.endpoint = endpoint
 		self.key = key
 		self.secret = secret
@@ -16,6 +19,12 @@ class Trade:
 		)
 
 	async def make_order(self, order):
+		run = get_running_loop().run_in_executor
+		opened_ids = await run(self.executor, lambda: self.open_order(order))
+		await sleep(10)
+		await run(self.executor, lambda: self.close_order(order, opened_ids))
+
+	def open_order(self, order):
 		session = self.usdt_perpetual
 
 		depo = session.get_wallet_balance(coin = 'USDT') \
@@ -24,7 +33,7 @@ class Trade:
 		if usdt_quanty == 0:
 			return
 
-		just_opened_orders = []
+		opened_ids = []
 		stepsize = floor(order.candle_shadow / 3 * .95)
 
 		for step in range(4):
@@ -42,9 +51,10 @@ class Trade:
 				is_isolated = True,
 				leverage = 5
 			)
-			just_opened_orders.append(buy_limit['result']['order_id'])
+			opened_ids += [buy_limit['result']['order_id']]
 
-		await sleep(10)
+		return opened_ids
 
-		for order_id in just_opened_orders:
+	def close_order(self, order, opened_ids):
+		for order_id in opened_ids:
 			session.cancel_active_order(symbol = order.coin, order_id = order_id)
