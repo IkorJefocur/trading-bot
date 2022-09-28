@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
 from flask import Flask, request, abort
+from events import Events
 from .order import Order
 
 class Server:
@@ -11,7 +12,7 @@ class Server:
 		name = __name__,
 		**flask_params
 	):
-		self.receivers = set()
+		self.events = Events(('order_added'))
 		self.local = local
 
 		self.allowed_ips = allowed_ips or ([
@@ -25,12 +26,6 @@ class Server:
 
 		self.app = Flask(name, **flask_params)
 		self.app.route('/', methods=['POST'])(self.handle_webhook)
-
-	def add_receiver(self, receiver):
-		self.receivers.add(receiver)
-
-	def remove_receiver(self, reciever):
-		self.recievers.remove(receiver)
 
 	def run(self, *args, host = None, port = None, **kwargs):
 		self.app.run(
@@ -52,8 +47,7 @@ class Server:
 			abort(400)
 
 		else:
-			for receiver in self.receivers:
-				receiver(order)
+			self.events.order_added(order)
 			return '', 204
 
 	def parse_order(self, data):

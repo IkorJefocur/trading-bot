@@ -22,7 +22,7 @@ def run(server, trade, bot):
 	def bridge(order):
 		run_coroutine(trade.make_order(order), trade_loop)
 		run_coroutine(bot.send(order), bot_loop)
-	server.add_receiver(bridge)
+	server.events.order_added += bridge
 
 	server_thread.join()
 

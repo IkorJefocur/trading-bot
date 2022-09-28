@@ -9,6 +9,7 @@ python-telegram-bot = "*"
 pybit = "*"
 aiogram = "*"
 python-dotenv = "*"
+events = {git = "https://github.com/IkorJefocur/python-events"}
 
 [dev-packages]
 
