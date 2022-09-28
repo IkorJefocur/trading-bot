@@ -1,14 +1,11 @@
 from asyncio import gather
-from aiogram import Bot as TelegramBot, Dispatcher, executor
-from .base import Plugin
+from ..base import Plugin
 
-class Bot(Plugin):
+class OrderLog(Plugin):
 
-	def __init__(self, chats, **telegram_params):
-		super().__init__()
+	def __init__(self, telegram_service, chats):
+		super().__init__(telegram_service)
 		self.chats = chats
-
-		self.dispatcher = Dispatcher(TelegramBot(**telegram_params))
 
 	def format_message(self, order):
 		return \
@@ -22,12 +19,9 @@ class Bot(Plugin):
 
 	@Plugin.loop_bound
 	async def send(self, order):
-		bot = self.dispatcher.bot
+		bot = self.service.target.bot
 		message = self.format_message(order)
 
 		await gather(*(
 			bot.send_message(chat_id, message) for chat_id in self.chats
 		))
-
-	def run(self, *args, **kwargs):
-		executor.start_polling(self.dispatcher, *args, **kwargs)

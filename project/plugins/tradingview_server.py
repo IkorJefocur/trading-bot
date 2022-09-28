@@ -1,45 +1,26 @@
 from datetime import timedelta, datetime
 from threading import Thread
-from flask import Flask, request, abort
+from flask import request, abort
 from events import Events
-from .base import Plugin
-from .order import Order
+from ..base import Plugin
+from ..models.order import Order
 
-class Server(Plugin):
+class TradingviewServer(Plugin):
 
-	def __init__(
-		self,
-		local = False,
-		allowed_ips = None,
-		name = __name__,
-		**flask_params
-	):
-		super().__init__()
-		self.events = Events(('order_added'), loop = self.loop)
-		self.local = local
+	def __init__(self, flask_service, allowed_ips = None):
+		super().__init__(flask_service)
+		self.events = Events(('order_added'), loop = self.service.loop)
 
 		self.allowed_ips = allowed_ips or ([
 			'127.0.0.1'
-		] if local else [
+		] if flask_service.local else [
 			'52.89.214.238',
 			'34.212.75.30',
 			'54.218.53.128',
 			'52.32.178.7'
 		])
 
-		self.app = Flask(name, **flask_params)
-		self.app.route('/', methods=['POST'])(self.handle_webhook)
-
-	def start_lifecycle(self):
-		super().start_lifecycle()
-		Thread(target = self.run_server).start()
-
-	def run_server(self):
-		self.app.run(
-			host = None if self.local else '0.0.0.0',
-			port = 3000 if self.local else 80,
-			load_dotenv = False
-		)
+		flask_service.target.route('/', methods=['POST'])(self.handle_webhook)
 
 	def handle_webhook(self):
 		if request.remote_addr not in self.allowed_ips:

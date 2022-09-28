@@ -2,7 +2,7 @@ from math import floor
 from asyncio import sleep
 from concurrent.futures import ThreadPoolExecutor
 from pybit import usdt_perpetual
-from .base import Plugin
+from ..base import Plugin
 
 class Trade(Plugin):
 
@@ -22,7 +22,7 @@ class Trade(Plugin):
 
 	@Plugin.loop_bound
 	async def make_order(self, order):
-		run = self.loop.run_in_executor
+		run = self.service.loop.run_in_executor
 		opened_ids = await run(self.executor, lambda: self.open_order(order))
 		await sleep(10)
 		await run(self.executor, lambda: self.close_order(order, opened_ids))
