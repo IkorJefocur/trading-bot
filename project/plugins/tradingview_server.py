@@ -20,7 +20,9 @@ class TradingviewServer(Plugin):
 			'52.32.178.7'
 		])
 
-		flask_service.target.route('/', methods=['POST'])(self.handle_webhook)
+	def start_lifecycle(self):
+		self.service.target.route('/', methods=['POST'])(self.handle_webhook)
+		super().start_lifecycle()
 
 	def handle_webhook(self):
 		if request.remote_addr not in self.allowed_ips:
