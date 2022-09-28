@@ -1,4 +1,6 @@
 from datetime import timedelta, datetime
+from asyncio import new_event_loop, set_event_loop
+from threading import Thread
 from flask import Flask, request, abort
 from events import Events
 from .order import Order
@@ -12,7 +14,8 @@ class Server:
 		name = __name__,
 		**flask_params
 	):
-		self.events = Events(('order_added'))
+		self.loop = new_event_loop()
+		self.events = Events(('order_added'), loop = self.loop)
 		self.local = local
 
 		self.allowed_ips = allowed_ips or ([
@@ -28,6 +31,11 @@ class Server:
 		self.app.route('/', methods=['POST'])(self.handle_webhook)
 
 	def run(self, *args, host = None, port = None, **kwargs):
+		def event_thread():
+			set_event_loop(self.loop)
+			self.loop.run_forever()
+		Thread(target = event_thread).start()
+
 		self.app.run(
 			*args,
 			host = host or (None if self.local else '0.0.0.0'),
