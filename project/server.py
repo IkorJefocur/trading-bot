@@ -37,7 +37,8 @@ class Server(Plugin):
 	def run_server(self):
 		self.app.run(
 			host = None if self.local else '0.0.0.0',
-			port = 3000 if self.local else 80
+			port = 3000 if self.local else 80,
+			load_dotenv = False
 		)
 
 	def handle_webhook(self):
