@@ -1,9 +1,11 @@
 from asyncio import gather
 from aiogram import Bot as TelegramBot, Dispatcher, executor
+from .base import Plugin
 
-class Bot:
+class Bot(Plugin):
 
 	def __init__(self, chats, **telegram_params):
+		super().__init__()
 		self.chats = chats
 
 		self.dispatcher = Dispatcher(TelegramBot(**telegram_params))
@@ -18,6 +20,7 @@ class Bot:
 			+ f"High - {order.high:g}\n" \
 			+ f"TF - {order.tf}"
 
+	@Plugin.loop_bound
 	async def send(self, order):
 		bot = self.dispatcher.bot
 		message = self.format_message(order)

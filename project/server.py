@@ -1,11 +1,11 @@
 from datetime import timedelta, datetime
-from asyncio import new_event_loop, set_event_loop
 from threading import Thread
 from flask import Flask, request, abort
 from events import Events
+from .base import Plugin
 from .order import Order
 
-class Server:
+class Server(Plugin):
 
 	def __init__(
 		self,
@@ -14,7 +14,7 @@ class Server:
 		name = __name__,
 		**flask_params
 	):
-		self.loop = new_event_loop()
+		super().__init__()
 		self.events = Events(('order_added'), loop = self.loop)
 		self.local = local
 
@@ -30,17 +30,14 @@ class Server:
 		self.app = Flask(name, **flask_params)
 		self.app.route('/', methods=['POST'])(self.handle_webhook)
 
-	def run(self, *args, host = None, port = None, **kwargs):
-		def event_thread():
-			set_event_loop(self.loop)
-			self.loop.run_forever()
-		Thread(target = event_thread).start()
+	def start_lifecycle(self):
+		super().start_lifecycle()
+		Thread(target = self.run_server).start()
 
+	def run_server(self):
 		self.app.run(
-			*args,
-			host = host or (None if self.local else '0.0.0.0'),
-			port = port or (3000 if self.local else 80),
-			**kwargs
+			host = None if self.local else '0.0.0.0',
+			port = 3000 if self.local else 80
 		)
 
 	def handle_webhook(self):

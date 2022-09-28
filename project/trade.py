@@ -1,11 +1,13 @@
 from math import floor
-from asyncio import sleep, get_running_loop
+from asyncio import sleep
 from concurrent.futures import ThreadPoolExecutor
 from pybit import usdt_perpetual
+from .base import Plugin
 
-class Trade:
+class Trade(Plugin):
 
 	def __init__(self, endpoint, key, secret):
+		super().__init__()
 		self.executor = ThreadPoolExecutor()
 
 		self.endpoint = endpoint
@@ -18,8 +20,9 @@ class Trade:
 			api_secret = self.secret
 		)
 
+	@Plugin.loop_bound
 	async def make_order(self, order):
-		run = get_running_loop().run_in_executor
+		run = self.loop.run_in_executor
 		opened_ids = await run(self.executor, lambda: self.open_order(order))
 		await sleep(10)
 		await run(self.executor, lambda: self.close_order(order, opened_ids))
