@@ -59,5 +59,7 @@ class Trade(Plugin):
 		return opened_ids
 
 	def close_order(self, order, opened_ids):
+		session = self.usdt_perpetual
+
 		for order_id in opened_ids:
 			session.cancel_active_order(symbol = order.coin, order_id = order_id)
