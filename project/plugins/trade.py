@@ -21,29 +21,29 @@ class Trade(Plugin):
 		)
 
 	@Plugin.loop_bound
-	async def make_order(self, order):
+	async def make_order(self, candle):
 		run = self.service.loop.run_in_executor
-		opened_ids = await run(self.executor, lambda: self.open_order(order))
+		opened_ids = await run(self.executor, lambda: self.open_order(candle))
 		await sleep(10)
-		await run(self.executor, lambda: self.close_order(order, opened_ids))
+		await run(self.executor, lambda: self.close_order(candle, opened_ids))
 
-	def open_order(self, order):
+	def open_order(self, candle):
 		session = self.usdt_perpetual
 
 		depo = session.get_wallet_balance(coin = 'USDT') \
 			['result']['USDT']['wallet_balance']
-		usdt_quanty = round(depo / order.close / 100)
+		usdt_quanty = round(depo / candle.close / 100)
 		if usdt_quanty == 0:
 			return
 
 		opened_ids = []
-		stepsize = floor(order.candle_shadow / 3 * .95)
+		stepsize = floor(candle.shadow / 3 * .95)
 
 		for step in range(4):
-			entry = order.close - stepsize * step
+			entry = candle.close - stepsize * step
 			buy_limit = session.place_active_order(
-				symbol = order.coin,
-				side = 'Buy' if order.buy else 'Sell',
+				symbol = candle.coin,
+				side = 'Buy' if candle.buy else 'Sell',
 				order_type = 'Limit',
 				qty = usdt_quanty,
 				price = entry,
@@ -58,6 +58,6 @@ class Trade(Plugin):
 
 		return opened_ids
 
-	def close_order(self, order, opened_ids):
+	def close_order(self, candle, opened_ids):
 		for order_id in opened_ids:
-			session.cancel_active_order(symbol = order.coin, order_id = order_id)
+			session.cancel_active_order(symbol = candle.coin, order_id = order_id)

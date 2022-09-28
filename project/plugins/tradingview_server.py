@@ -3,13 +3,13 @@ from threading import Thread
 from flask import request, abort
 from events import Events
 from ..base import Plugin
-from ..models.order import Order
+from ..models.candle import Candle
 
 class TradingviewServer(Plugin):
 
 	def __init__(self, flask_service, allowed_ips = None):
 		super().__init__(flask_service)
-		self.events = Events(('order_added'), loop = self.service.loop)
+		self.events = Events(('candle_created'), loop = self.service.loop)
 
 		self.allowed_ips = allowed_ips or ([
 			'127.0.0.1'
@@ -31,15 +31,15 @@ class TradingviewServer(Plugin):
 			abort(400)
 
 		try:
-			order = self.parse_order(request.json)
+			candle = self.parse_candle(request.json)
 		except TypeError:
 			abort(400)
 
 		else:
-			self.events.order_added(order)
+			self.events.candle_created(candle)
 			return '', 204
 
-	def parse_order(self, data):
+	def parse_candle(self, data):
 		try:
 			side = data['side'].lower()
 			coin = data['coin']
@@ -59,7 +59,7 @@ class TradingviewServer(Plugin):
 			):
 				raise Exception()
 
-			return Order(side, coin, time, close, low, high, tf)
+			return Candle(side, coin, time, close, low, high, tf)
 
 		except Exception as e:
-			raise TypeError('Incorrect order json')
+			raise TypeError('Incorrect candle json')

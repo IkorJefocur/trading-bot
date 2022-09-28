@@ -3,7 +3,7 @@ from asyncio import new_event_loop, gather
 from dotenv import load_dotenv
 from project import \
 	FlaskServer, Telegram, \
-	TradingviewServer, Trade, OrderLog
+	TradingviewServer, Trade, Log
 
 load_dotenv('.env')
 load_dotenv('.prod.env')
@@ -19,16 +19,16 @@ trade = Trade(
 	key = environ['BYBIT_KEY'],
 	secret = environ['BYBIT_SECRET']
 )
-log = OrderLog(
+log = Log(
 	Telegram(
 		token = environ['TELEGRAM_TOKEN']
 	),
 	chats = environ['TELEGRAM_CHATS'].split(',')
 )
 
-async def order_added(order):
-	await gather(trade.make_order(order), log.send(order))
-tv.events.order_added += order_added
+async def candle_created(candle):
+	await gather(trade.make_order(candle), log.send_candle(candle))
+tv.events.candle_created += candle_created
 
 for plugin in (tv, trade, log):
 	plugin.start_lifecycle()
