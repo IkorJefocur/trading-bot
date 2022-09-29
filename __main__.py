@@ -1,9 +1,11 @@
 from os import environ
 from asyncio import new_event_loop, gather
 from dotenv import load_dotenv
-from project import \
-	FlaskServer, Telegram, \
-	TradingviewServer, Trade, Log
+from project.services.flask_server import FlaskServer
+from project.services.telegram import Telegram
+from project.plugins.tradingview_server import TradingviewServer
+from project.plugins.trade import Trade
+from project.plugins.log import Log
 
 load_dotenv('.env')
 load_dotenv('.prod.env')
