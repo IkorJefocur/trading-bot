@@ -20,7 +20,7 @@ class Log(Plugin):
 
 	@Plugin.loop_bound
 	async def send(self, message):
-		bot = self.service.target.bot
+		bot = self.service.target
 		await gather(*(
 			bot.send_message(chat_id, message) for chat_id in self.chats
 		))

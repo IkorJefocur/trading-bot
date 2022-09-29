@@ -21,6 +21,8 @@ trade = Trade(
 )
 log = Log(
 	Telegram(
+		api_id = environ['TELEGRAM_ID'],
+		api_hash = environ['TELEGRAM_HASH'],
 		token = environ['TELEGRAM_TOKEN']
 	),
 	chats = [int(chat_id) for chat_id in environ['TELEGRAM_CHATS'].split(',')]

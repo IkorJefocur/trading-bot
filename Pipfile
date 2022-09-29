@@ -7,9 +7,9 @@ name = "pypi"
 flask = "*"
 python-telegram-bot = "*"
 pybit = "*"
-aiogram = "*"
 python-dotenv = "*"
 events = {git = "https://github.com/IkorJefocur/python-events"}
+telethon = "*"
 
 [dev-packages]
 
