@@ -30,8 +30,10 @@ class Plugin:
 
 	@staticmethod
 	def loop_bound(method):
-		def bound(self, *args, **kwargs):
-			return run_coroutine(method(self, *args, **kwargs), self.service.loop)
+		async def bound(self, *args, **kwargs):
+			return await wrap_future(run_coroutine_threadsafe(
+				method(self, *args, **kwargs), self.service.loop
+			))
 		return bound
 
 	def __init__(self, service = None):
@@ -39,12 +41,3 @@ class Plugin:
 
 	def start_lifecycle(self):
 		self.service.start_lifecycle()
-
-def run_coroutine(coro, loop):
-	future = run_coroutine_threadsafe(coro, loop)
-	future.add_done_callback(propagate_future_exception)
-	return wrap_future(future)
-
-def propagate_future_exception(future):
-	if future.exception():
-		raise future.exception()
