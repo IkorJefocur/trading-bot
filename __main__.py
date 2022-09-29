@@ -23,7 +23,7 @@ log = Log(
 	Telegram(
 		token = environ['TELEGRAM_TOKEN']
 	),
-	chats = environ['TELEGRAM_CHATS'].split(',')
+	chats = [int(chat_id) for chat_id in environ['TELEGRAM_CHATS'].split(',')]
 )
 
 async def candle_created(candle):
