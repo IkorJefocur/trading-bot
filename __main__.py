@@ -1,5 +1,6 @@
-from os import environ
+from os import environ, path
 from asyncio import new_event_loop, gather
+from json import load
 from dotenv import load_dotenv
 from project.services.flask_server import FlaskServer
 from project.services.telegram import Telegram
@@ -8,12 +9,15 @@ from project.plugins.trade import Trade
 from project.plugins.log import Log
 
 load_dotenv('.env')
-load_dotenv('.prod.env')
+config = {}
+for config_file in ('config.json', 'config.personal.json'):
+	if path.isfile(config_file):
+		config.update(load(open(config_file, 'r')))
 
 tv = TradingviewServer(
 	FlaskServer(
 		name = __name__,
-		local = True if 'LOCAL_SERVER' in environ else False
+		local = config.get('local_server', False)
 	)
 )
 trade = Trade(
@@ -28,7 +32,7 @@ log = Log(
 	).login(
 		bot_token = environ['TELEGRAM_TOKEN']
 	),
-	chats = [int(chat_id) for chat_id in environ['TELEGRAM_CHATS'].split(',')]
+	chats = config.get('telegram_chats', [])
 )
 
 async def candle_created(candle):
