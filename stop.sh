@@ -1,4 +1,5 @@
 #!/bin/bash
 cd `dirname $0`
-screen -S `cat pid.txt` -X quit
+pid=`cat pid.txt | xargs`
+[[ ! -z $pid ]] && screen -S $pid -X quit
 rm pid.txt
