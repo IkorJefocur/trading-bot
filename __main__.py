@@ -12,9 +12,8 @@ from project.models.trader import Trader, Profit
 
 load_dotenv('.env')
 config = {}
-for config_file in ('config.json', 'config.personal.json'):
-	if path.isfile(config_file):
-		config.update(load(open(config_file, 'r')))
+if path.isfile('config.json'):
+	config = load(open('config.json', 'r'))
 
 flask = FlaskServer(
 	name = __name__,

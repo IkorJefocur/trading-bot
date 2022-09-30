@@ -1,4 +1,4 @@
 .env
-config.personal.json
+config.json
 log.txt
 pid.txt
