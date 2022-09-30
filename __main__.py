@@ -32,11 +32,11 @@ tv = TradingviewServer(
 traders = TradersWatch(
 	telegram,
 	traders = [Trader(
-		trader['uid'],
+		uid,
 		{days: Profit(
 			profit['roe'], profit['pnl']
-		) for days, profit in trader['performance'].items()}
-	) for trader in config.get('traders', [])]
+		) for days, profit in performance.items()}
+	) for uid, performance in config.get('traders', {}).items()]
 )
 trade = Trade(
 	endpoint = 'https://api-testnet.bybit.com',
