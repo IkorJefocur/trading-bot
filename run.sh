@@ -1,5 +1,5 @@
 #!/bin/bash
-./stop.sh 2>/dev/null || true
 echo -e "\n---------- $(date) ----------\n" >> log.txt
-nohup pipenv run authbind python . 2>&1 >> log.txt &
-echo $! > pid.txt
+screen -dmS $$ bash -c "pipenv run authbind python . 2>&1 | tee log.txt"
+echo $$ > pid.txt
+./attach.sh
