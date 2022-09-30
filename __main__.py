@@ -23,7 +23,7 @@ telegram = Telegram(
 	api_id = environ['TELEGRAM_ID'],
 	api_hash = environ['TELEGRAM_HASH']
 ).login(
-	bot_token = environ['TELEGRAM_TOKEN']
+	bot_token = environ.get('TELEGRAM_TOKEN')
 )
 
 tv = TradingviewServer(
