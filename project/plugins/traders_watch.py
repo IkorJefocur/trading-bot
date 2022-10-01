@@ -10,13 +10,19 @@ from ..models.trader import Order, OrderPoint, Profit
 
 class TradersWatch(Plugin):
 
-	def __init__(self, telegram_service, traders):
+	def __init__(
+		self,
+		telegram_service,
+		traders,
+		allowed_chats = ['@BinancFuture_bot']
+	):
 		super().__init__(telegram_service)
 		self.events = Events(('order_made'))
 		self.traders = {trader.id: trader for trader in traders}
+		self.message_event = events.NewMessage(chats = allowed_chats)
 
 	def start_lifecycle(self):
-		self.service.target.on(events.NewMessage)(self.handle_message)
+		self.service.target.on(self.message_event)(self.handle_message)
 		super().start_lifecycle()
 
 	async def handle_message(self, event):
