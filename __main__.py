@@ -34,7 +34,8 @@ traders = TradersWatch(
 	traders = [Trader(
 		uid,
 		{days: Profit(
-			profit['roe'], profit['pnl']
+			profit['roe'] / 100,
+			profit['pnl']
 		) for days, profit in performance.items()}
 	) for uid, performance in config.get('traders', {}).items()]
 )
