@@ -7,8 +7,8 @@ class Log(Plugin):
 		super().__init__(telegram_service)
 		self.chats = chats
 
-	def send_candle(self, candle):
-		return self.send(
+	async def send_candle(self, candle):
+		await self.send(
 			f"{'BUY' if candle.buy else 'SELL'}\n" \
 			+ f"Coin - {candle.coin}\n" \
 			+ f"Time - {candle.time.strftime('%d.%m.%Y %H:%M:%S %Z')}\n" \

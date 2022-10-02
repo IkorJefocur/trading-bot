@@ -1,5 +1,5 @@
 from os import environ, path
-from asyncio import new_event_loop, gather
+from asyncio import new_event_loop
 from json import load
 from dotenv import load_dotenv
 from project.services.flask_server import FlaskServer
@@ -49,9 +49,8 @@ log = Log(
 	chats = config.get('telegram_chats', [])
 )
 
-async def candle_created(candle):
-	await gather(trade.make_order(candle), log.send_candle(candle))
-tv.events.candle_created += candle_created
+tv.events.candle_created += trade.make_order
+tv.events.candle_created += log.send_candle
 traders.events.order_made += print
 
 for plugin in (tv, traders, trade, log):
