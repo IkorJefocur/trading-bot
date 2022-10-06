@@ -1,19 +1,28 @@
-from os import environ, path
+from os import environ, path, makedirs
 from asyncio import new_event_loop
 from json import load
 from dotenv import load_dotenv
+from project.models.trader import Trader
+from project.services.http_client import HTTPClient
 from project.services.flask_server import FlaskServer
 from project.services.telegram import Telegram
 from project.plugins.tradingview_server import TradingviewServer
-from project.plugins.traders_watch import TradersWatch
+from project.plugins.binance_traders_watch import BinanceTradersWatch
 from project.plugins.trade import Trade
+from project.plugins.file_manager import FileManager, TraderFormat
 from project.plugins.log import Log
-from project.models.trader import Trader, Profit
 
 load_dotenv('.env')
 config = {}
 if path.isfile('config.json'):
 	config = load(open('config.json', 'r'))
+
+makedirs('db/traders', exist_ok = True)
+trader_format = TraderFormat()
+traders_dumps = {
+	uid: FileManager(f'db/traders/{uid}.json', trader_format)
+		for uid in config.get('traders')
+}
 
 flask = FlaskServer(
 	name = __name__,
@@ -29,15 +38,12 @@ telegram = Telegram(
 tv = TradingviewServer(
 	flask
 )
-traders = TradersWatch(
-	telegram,
-	traders = [Trader(
-		uid,
-		{days: Profit(
-			profit['roe'] / 100,
-			profit['pnl']
-		) for days, profit in performance.items()}
-	) for uid, performance in config.get('traders', {}).items()]
+traders = BinanceTradersWatch(
+	HTTPClient(config.get('traders_proxies', [])),
+	[
+		traders_dumps[uid].load() or Trader(uid)
+			for uid in config.get('traders', [])
+	]
 )
 trade = Trade(
 	endpoint = 'https://api-testnet.bybit.com',
@@ -49,9 +55,15 @@ log = Log(
 	chats = config.get('telegram_chats', [])
 )
 
+def dump_trader(_, trader):
+	traders_dumps[trader.id].save(trader)
+traders.events.performance_updated += dump_trader
+traders.events.position_opened += dump_trader
+traders.events.position_updated += dump_trader
+traders.events.position_closed += dump_trader
+
 tv.events.candle_created += trade.make_order
 tv.events.candle_created += log.send_candle
-traders.events.order_made += print
 
 for plugin in (tv, traders, trade, log):
 	plugin.start_lifecycle()

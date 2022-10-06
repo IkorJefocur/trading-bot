@@ -26,18 +26,21 @@ class Service:
 		else:
 			self.loop.run_forever()
 
+	def run_in_loop(self, coro):
+		return run_coroutine_threadsafe(coro, self.loop)
+
 class Plugin:
 
 	@staticmethod
 	def loop_bound(method):
 		async def bound(self, *args, **kwargs):
-			return await wrap_future(run_coroutine_threadsafe(
-				method(self, *args, **kwargs), self.service.loop
+			return await wrap_future(self.service.run_in_loop(
+				method(self, *args, **kwargs)
 			))
 		return bound
 
-	def __init__(self, service = None):
-		self.service = service or Service(None)
+	def __init__(self, service = Service(None)):
+		self.service = service
 
 	def start_lifecycle(self):
 		self.service.start_lifecycle()
