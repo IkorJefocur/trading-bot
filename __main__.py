@@ -55,12 +55,9 @@ log = Log(
 	chats = config.get('telegram_chats', [])
 )
 
-def dump_trader(_, trader):
+def dump_trader(trader):
 	traders_dumps[trader.id].save(trader)
-traders.events.performance_updated += dump_trader
-traders.events.position_opened += dump_trader
-traders.events.position_updated += dump_trader
-traders.events.position_closed += dump_trader
+traders.events.trader_fetched += dump_trader
 
 tv.events.candle_created += trade.make_order
 tv.events.candle_created += log.send_candle
