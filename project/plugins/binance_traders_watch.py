@@ -65,19 +65,15 @@ class BinanceTradersWatch(Plugin):
 				+ '/future/leaderboard/getOtherPosition'
 			))['data']
 			current_positions = list(data['otherPositionRetList'])
-			current_symbols = {pos['symbol'] for pos in current_positions}
 
 		except (ClientError, LookupError, TypeError):
 			return 10
 
+		touched_stats = set()
 		for cur_pos in current_positions:
 			try:
 				symbol = cur_pos['symbol']
-				stats = self.trader.position_stats(symbol)
 				time = datetime.fromtimestamp(cur_pos['updateTimeStamp'] / 1000)
-				if stats.last_position and stats.last_position.time == time:
-					continue
-
 				entry_price = float(cur_pos['entryPrice'])
 				price = float(cur_pos['markPrice'])
 				amount = float(cur_pos['amount'])
@@ -87,17 +83,20 @@ class BinanceTradersWatch(Plugin):
 			except (LookupError, ValueError, TypeError):
 				continue
 
-			position = Position(
-				time, symbol, price, amount, Profit(roe, pnl)
-			).chain(stats.last_position)
-			stats.update(position)
+			position = Position(time, symbol, price, amount, Profit(roe, pnl))
+			stats = self.trader.position_stats(position)
+			touched_stats.add(stats)
+			if position.chain_equal(stats.last_position):
+				continue
+
+			position = stats.update(position, chain = True)
 			event = self.events.position_updated \
 				if position.prev and price != entry_price \
 				else self.events.position_opened
 			event(position)
 
-		for stats in self.trader.position_stats():
-			if stats.symbol not in current_symbols:
+		for _, stats in self.trader.position_stats():
+			if stats not in touched_stats:
 				position = stats.last_position
 				stats.update(None)
 				self.events.position_closed(position)

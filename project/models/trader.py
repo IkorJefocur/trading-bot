@@ -45,18 +45,20 @@ class Position:
 			return self
 		if self.time > other.time:
 			self.prev = other
-		if self.time == other.time:
+		if self.chain_equal(other):
 			self.prev = other.prev
 		return self
+
+	def chain_equal(self, other):
+		return bool(other) and self.time == other.time
 
 class PositionStats:
 
 	def __init__(
-		self, symbol, last_position = None,
+		self, last_position = None,
 		min_pnl_profit = None, max_pnl_profit = None,
 		min_roe_profit = None, max_roe_profit = None
 	):
-		self.symbol = symbol
 		self.last_position = last_position
 
 		self.min_pnl_profit = min_pnl_profit or Profit(0, float('inf'))
@@ -64,10 +66,10 @@ class PositionStats:
 		self.min_roe_profit = min_roe_profit or Profit(float('inf'), 0)
 		self.max_roe_profit = max_roe_profit or Profit(float('-inf'), 0)
 
-	def update(self, position):
+	def update(self, position, chain = False):
 		self.last_position = position
 		if not position:
-			return
+			return None
 
 		if position.profit.pnl < self.min_pnl_profit.pnl:
 			self.min_pnl_profit = position.profit
@@ -77,6 +79,10 @@ class PositionStats:
 			self.min_roe_profit = position.profit
 		if position.profit.roe > self.max_roe_profit.roe:
 			self.max_roe_profit = position.profit
+
+		if chain:
+			position = position.chain(self.last_position)
+		return position
 
 class Performance:
 
@@ -128,13 +134,15 @@ class Performance:
 
 class Trader:
 
-	def __init__(self, uid, performance = [], positions = []):
+	def __init__(self, uid, performance = [], positions = {}):
 		self.id = uid
 		self.all_periods_performance = {
 			**{period: Performance(period) for period in Performance.periods},
 			**{perf.period: perf for perf in performance}
 		}
-		self.positions_stats = {stats.symbol: stats for stats in positions}
+		self.positions_stats = {
+			category: stats for category, stats in positions.items()
+		}
 
 	def performance(self, period = None):
 		return self.all_periods_performance[period] if period \
@@ -146,9 +154,14 @@ class Trader:
 			None
 		)
 
-	def position_stats(self, symbol = None):
-		if not symbol:
-			return self.positions_stats.values()
-		if symbol not in self.positions_stats:
-			self.positions_stats[symbol] = PositionStats(symbol)
-		return self.positions_stats[symbol]
+	def position_stats(self, position = None):
+		if not position:
+			return self.positions_stats.items()
+
+		category = self.position_category(position)
+		if category not in self.positions_stats:
+			self.positions_stats[category] = PositionStats()
+		return self.positions_stats[category]
+
+	def position_category(self, position):
+		return f"{'LONG' if position.long else 'SHORT'}-{position.symbol}"

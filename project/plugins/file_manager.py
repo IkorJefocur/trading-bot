@@ -72,12 +72,12 @@ class TraderFormat(Format):
 			},
 
 			'positions': {
-				pos.symbol: {
+				category: {
 					'min_pnl': self.dump_profit(pos.min_pnl_profit),
 					'max_pnl': self.dump_profit(pos.max_pnl_profit),
 					'min_roe': self.dump_profit(pos.min_roe_profit),
 					'max_roe': self.dump_profit(pos.max_roe_profit)
-				} for pos in trader.position_stats()
+				} for category, pos in trader.position_stats()
 			}
 		})
 
@@ -94,13 +94,13 @@ class TraderFormat(Format):
 				perf['average']
 			) for period, perf in trader['performance'].items()],
 
-			[PositionStats(
-				symbol, None,
+			{category: PositionStats(
+				None,
 				self.parse_profit(pos['min_pnl']),
 				self.parse_profit(pos['max_pnl']),
 				self.parse_profit(pos['min_roe']),
 				self.parse_profit(pos['max_roe'])
-			) for symbol, pos in trader['positions'].items()]
+			) for category, pos in trader['positions'].items()}
 		)
 
 	def dump_profit(self, profit):
