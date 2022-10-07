@@ -17,13 +17,7 @@ config = {}
 if path.isfile('config.json'):
 	config = load(open('config.json', 'r'))
 
-makedirs('db/traders', exist_ok = True)
-trader_format = TraderFormat()
-traders_dumps = {
-	uid: FileManager(f'db/traders/{uid}.json', trader_format)
-		for uid in config.get('traders')
-}
-
+traders_http = HTTPClient(config.get('traders_proxies', []))
 flask = FlaskServer(
 	name = __name__,
 	local = config.get('local_server', False)
@@ -35,16 +29,6 @@ telegram = Telegram(
 	bot_token = environ.get('TELEGRAM_TOKEN')
 )
 
-tv = TradingviewServer(
-	flask
-)
-traders = BinanceTradersWatch(
-	HTTPClient(config.get('traders_proxies', [])),
-	[
-		traders_dumps[uid].load() or Trader(uid)
-			for uid in config.get('traders', [])
-	]
-)
 trade = Trade(
 	endpoint = 'https://api-testnet.bybit.com',
 	key = environ['BYBIT_KEY'],
@@ -55,13 +39,27 @@ log = Log(
 	chats = config.get('telegram_chats', [])
 )
 
-def dump_trader(trader):
-	traders_dumps[trader.id].save(trader)
-traders.events.trader_fetched += dump_trader
-
+tv = TradingviewServer(
+	flask
+)
 tv.events.candle_created += trade.make_order
 tv.events.candle_created += log.send_candle
 
-for plugin in (tv, traders, trade, log):
+traders_watch = []
+makedirs('db/traders', exist_ok = True)
+trader_format = TraderFormat()
+for uid in config.get('traders', []):
+	dump = FileManager(
+		path = f'db/traders/{uid}.json',
+		formatter = trader_format
+	)
+	watch = BinanceTradersWatch(
+		traders_http,
+		trader = dump.load() or Trader(uid)
+	)
+	watch.events.trader_fetched += dump.save
+	traders_watch += [dump, watch]
+
+for plugin in [trade, log, tv, *traders_watch]:
 	plugin.start_lifecycle()
 new_event_loop().run_forever()
