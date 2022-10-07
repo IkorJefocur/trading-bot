@@ -8,8 +8,8 @@ flask = "*"
 python-telegram-bot = "*"
 pybit = "*"
 python-dotenv = "*"
-events = {git = "https://github.com/IkorJefocur/python-events"}
 telethon = "*"
+events = {git = "https://github.com/IkorJefocur/python-events"}
 
 [dev-packages]
 
