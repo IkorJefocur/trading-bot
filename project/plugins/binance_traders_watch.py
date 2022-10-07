@@ -90,8 +90,7 @@ class BinanceTradersWatch(Plugin):
 				continue
 
 			position = stats.update(position, chain = True)
-			event = self.events.position_updated \
-				if position.prev and price != entry_price \
+			event = self.events.position_updated if position.prev \
 				else self.events.position_opened
 			event(position)
 
