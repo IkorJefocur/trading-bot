@@ -18,7 +18,7 @@ class BinanceTradersWatch(Plugin):
 
 	def start_lifecycle(self):
 		super().start_lifecycle()
-		self.service.run_in_loop(self.watch())
+		self.service.send_task(self.watch())
 
 	async def watch(self):
 		await gather(
