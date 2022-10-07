@@ -6,26 +6,15 @@ from ..base import Plugin
 
 class Trade(Plugin):
 
-	def __init__(self, endpoint, key, secret):
-		super().__init__()
-		self.executor = ThreadPoolExecutor()
-
-		self.endpoint = endpoint
-		self.key = key
-		self.secret = secret
-
-		self.usdt_perpetual = usdt_perpetual.HTTP(
-			endpoint = self.endpoint,
-			api_key = self.key,
-			api_secret = self.secret
-		)
+	def __init__(self, bybit_service):
+		super().__init__(bybit_service)
 
 	@Plugin.loop_bound
 	async def make_order(self, candle):
-		run = self.service.loop.run_in_executor
-		opened_ids = await run(self.executor, lambda: self.open_order(candle))
+		run = self.service.send_sync_task
+		opened_ids = await run(lambda: self.open_order(candle))
 		await sleep(10)
-		await run(self.executor, lambda: self.close_order(candle, opened_ids))
+		await run(lambda: self.close_order(candle, opened_ids))
 
 	def open_order(self, candle):
 		session = self.usdt_perpetual

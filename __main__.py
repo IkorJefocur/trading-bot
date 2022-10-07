@@ -7,6 +7,7 @@ from project.models.trader import Trader
 from project.services.http_client import HTTPClient
 from project.services.flask_server import FlaskServer
 from project.services.telegram import Telegram
+from project.services.bybit import Bybit
 from project.plugins.tradingview_server import TradingviewServer
 from project.plugins.binance_traders_watch import BinanceTradersWatch
 from project.plugins.trade import Trade
@@ -29,11 +30,14 @@ telegram = Telegram(
 ).login(
 	bot_token = environ.get('TELEGRAM_TOKEN')
 )
-
-trade = Trade(
+bybit = Bybit(
 	endpoint = 'https://api-testnet.bybit.com',
 	key = environ['BYBIT_KEY'],
 	secret = environ['BYBIT_SECRET']
+)
+
+trade = Trade(
+	bybit
 )
 log = Log(
 	telegram,
