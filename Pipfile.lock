@@ -57,7 +57,7 @@
         },
         "events": {
             "git": "https://github.com/IkorJefocur/python-events",
-            "ref": "cbffc173c5fb9cb88e51dbc1fb77abb02325fe63"
+            "ref": "4521ba928b95b9c91d9ca3427fe9df4c2fec3063"
         },
         "flask": {
             "hashes": [
