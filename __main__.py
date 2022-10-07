@@ -1,5 +1,6 @@
 from os import environ, path, makedirs
 from asyncio import new_event_loop
+from itertools import chain
 from json import load
 from dotenv import load_dotenv
 from project.models.trader import Trader
@@ -45,10 +46,9 @@ tv = TradingviewServer(
 tv.events.candle_created += trade.make_order
 tv.events.candle_created += log.send_candle
 
-traders_watch = []
 makedirs('db/traders', exist_ok = True)
 trader_format = TraderFormat()
-for uid in config.get('traders', []):
+def make_trader_watch(uid):
 	dump = FileManager(
 		path = f'db/traders/{uid}.json',
 		formatter = trader_format
@@ -57,8 +57,11 @@ for uid in config.get('traders', []):
 		traders_http,
 		trader = dump.load() or Trader(uid)
 	)
-	watch.events.trader_fetched += dump.save
-	traders_watch += [dump, watch]
+	watch.events.trader_fetched += lambda: dump.save(watch.trader)
+	return [dump, watch]
+traders_watch = [*chain.from_iterable(
+	make_trader_watch(uid) for uid in config.get('traders', [])
+)]
 
 for plugin in [trade, log, tv, *traders_watch]:
 	plugin.start_lifecycle()

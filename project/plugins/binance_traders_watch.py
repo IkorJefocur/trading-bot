@@ -31,7 +31,7 @@ class BinanceTradersWatch(Plugin):
 					datetime.now() + timedelta(seconds = sleep_time or 0)
 
 			sleep_time = await self.update_positions()
-			self.events.trader_fetched(self.trader)
+			self.events.trader_fetched()
 			await sleep(sleep_time or 0)
 
 	@Plugin.loop_bound
