@@ -69,7 +69,7 @@ class BinanceTradersWatch(Plugin):
 		except (ClientError, LookupError, TypeError):
 			return 10
 
-		touched_stats = set()
+		positions_to_update = {}
 		for cur_pos in current_positions:
 			try:
 				symbol = cur_pos['symbol']
@@ -85,20 +85,20 @@ class BinanceTradersWatch(Plugin):
 
 			position = Position(time, symbol, price, amount, Profit(roe, pnl))
 			stats = self.trader.position_stats(position)
-			touched_stats.add(stats)
-			if position.chain_equal(stats.last_position):
-				continue
-
-			position = stats.update(position, chain = True)
-			event = self.events.position_updated if position.prev \
-				else self.events.position_opened
-			event(position)
+			positions_to_update[stats] = position
 
 		for _, stats in self.trader.position_stats():
-			if stats not in touched_stats:
-				position = stats.last_position
+			position = stats.last_position
+			if stats not in positions_to_update and position:
 				stats.update(None)
 				self.events.position_closed(position)
+
+		for stats, position in positions_to_update.items():
+			if not position.chain_equal(stats.last_position):
+				position = stats.update(position, chain = True)
+				event = self.events.position_updated if position.prev \
+					else self.events.position_opened
+				event(position)
 
 	@Plugin.loop_bound
 	async def trader_related_request(self, url):
