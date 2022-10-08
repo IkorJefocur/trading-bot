@@ -36,8 +36,8 @@ class Plugin:
 
 	@staticmethod
 	def loop_bound(method):
-		async def bound(self, *args, **kwargs):
-			return await wrap_future(run_coroutine_threadsafe(
+		def bound(self, *args, **kwargs):
+			return wrap_future(run_coroutine_threadsafe(
 				method(self, *args, **kwargs), self.service.loop
 			))
 		return bound
