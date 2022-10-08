@@ -40,6 +40,11 @@ class Position:
 	def increased(self):
 		return abs(self.amount) > abs(self.prev.amount) if self.prev else True
 
+	def deposit_portion(self, deposit):
+		if isinstance(deposit, Profit) or isinstance(deposit, Trader):
+			deposit = deposit.deposit
+		return self.total_price / deposit
+
 	def chain(self, other):
 		if not other:
 			return self
@@ -144,6 +149,10 @@ class Trader:
 			category: stats for category, stats in positions.items()
 		}
 
+	@property
+	def deposit():
+		return self.valuable_performance.current_profit.deposit
+
 	def performance(self, period = None):
 		return self.all_periods_performance[period] if period \
 			else self.all_periods_performance.values()
@@ -151,7 +160,7 @@ class Trader:
 	def valuable_performance(self):
 		return next(
 			(perf for perf in self.performance.values() if perf.total_records > 0),
-			None
+			[*self.performance.values()][0]
 		)
 
 	def position_stats(self, position = None):
