@@ -25,16 +25,20 @@ class Position:
 		self.profit = profit
 
 	@property
+	def entry(self):
+		return self.prev.entry if self.prev else self
+
+	@property
 	def total_price(self):
 		return self.price * self.amount
 
 	@property
-	def long(self):
-		return self.amount > 0
+	def amount_diff(self):
+		return self.amount - (self.prev.amount if self.prev else 0)
 
 	@property
-	def entry(self):
-		return self.prev.entry if self.prev else self
+	def long(self):
+		return self.amount > 0
 
 	@property
 	def increased(self):
