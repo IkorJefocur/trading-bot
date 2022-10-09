@@ -168,8 +168,8 @@ class Trader:
 		}
 
 	@property
-	def deposit():
-		return self.valuable_performance.current_profit.deposit
+	def deposit(self):
+		return self.valuable_performance().current_profit.deposit
 
 	def performance(self, period = None):
 		return self.all_periods_performance[period] if period \
@@ -177,8 +177,8 @@ class Trader:
 
 	def valuable_performance(self):
 		return next(
-			(perf for perf in self.performance.values() if perf.total_records > 0),
-			[*self.performance.values()][0]
+			(perf for perf in self.performance() if perf.total_records > 0),
+			[*self.performance()][0]
 		)
 
 	def position_stats(self, position = None):
