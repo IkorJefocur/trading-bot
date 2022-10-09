@@ -12,7 +12,7 @@ class BinanceTradersWatch(Plugin):
 		self.events = Events((
 			'trader_fetched',
 			'performance_updated',
-			'position_opened', 'position_closed',
+			'position_updated', 'position_opened', 'position_closed',
 			'position_increased', 'position_decreased'
 		))
 
@@ -100,6 +100,7 @@ class BinanceTradersWatch(Plugin):
 				event = self.events.position_opened if not position.prev \
 					else self.events.position_increased if position.increased \
 					else self.events.position_decreased
+				self.events.position_updated(position)
 				event(position)
 
 	@Plugin.loop_bound
