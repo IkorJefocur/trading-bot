@@ -92,6 +92,8 @@ class BinanceTradersWatch(Plugin):
 			position = stats.last_position
 			if stats not in positions_to_update and position:
 				stats.last_position = None
+				position = position.close()
+				self.events.position_updated(position)
 				self.events.position_closed(position)
 
 		for stats, position in positions_to_update.items():

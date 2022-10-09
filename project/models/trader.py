@@ -56,8 +56,14 @@ class Position:
 		return self.amount - (self.prev.amount if self.prev else 0)
 
 	@property
+	def closed(self):
+		return self.amount == 0
+
+	@property
 	def long(self):
-		return self.amount > 0
+		return self.amount > 0 if not self.closed \
+			else self.prev.long if self.prev \
+			else False
 
 	@property
 	def increased(self):
@@ -68,12 +74,17 @@ class Position:
 			return self
 		if self.time > other.time:
 			self.prev = other
-		if self.chain_equal(other):
+		if self.time == other.time:
 			self.prev = other.prev
 		return self
 
 	def chain_equal(self, other):
 		return bool(other) and self.time == other.time
+
+	def close(self):
+		return Position(
+			datetime.now(), self.symbol, self.price, 0, self.profit
+		).chain(self)
 
 class PositionStats:
 
