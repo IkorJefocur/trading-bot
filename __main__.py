@@ -31,7 +31,7 @@ telegram = Telegram(
 	bot_token = environ.get('TELEGRAM_TOKEN')
 )
 bybit = Bybit(
-	endpoint = 'https://api-testnet.bybit.com',
+	testnet = True,
 	key = environ['BYBIT_KEY'],
 	secret = environ['BYBIT_SECRET']
 )
