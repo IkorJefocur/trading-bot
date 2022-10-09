@@ -1,5 +1,24 @@
 from datetime import timedelta, date, datetime
 
+class Symbol:
+
+	existing_currencies = {
+		'USDT'
+	}
+
+	def __init__(self, value):
+		try:
+			self.currency = next(
+				cur for cur in self.existing_currencies if cur in value
+			)
+		except StopIteration:
+			raise ValueError(f'Currency for symbol {value} does not exists')
+		self.coin = value[: value.find(self.currency)]
+
+	@property
+	def value(self):
+		return f'{self.coin}{self.currency}'
+
 class Profit:
 
 	def __init__(self, roe, pnl):
@@ -177,4 +196,4 @@ class Trader:
 		return self.positions_stats[category]
 
 	def position_category(self, position):
-		return f"{'LONG' if position.long else 'SHORT'}-{position.symbol}"
+		return f"{'LONG' if position.long else 'SHORT'}-{position.symbol.value}"

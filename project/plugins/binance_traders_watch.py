@@ -3,7 +3,7 @@ from asyncio import sleep
 from events import Events
 from aiohttp import ClientError
 from ..base import Plugin
-from ..models.trader import Profit, Position, Trader
+from ..models.trader import Symbol, Profit, Position, Trader
 
 class BinanceTradersWatch(Plugin):
 
@@ -72,7 +72,7 @@ class BinanceTradersWatch(Plugin):
 		positions_to_update = {}
 		for cur_pos in current_positions:
 			try:
-				symbol = cur_pos['symbol']
+				symbol = Symbol(cur_pos['symbol'])
 				time = datetime.fromtimestamp(cur_pos['updateTimeStamp'] / 1000)
 				entry_price = float(cur_pos['entryPrice'])
 				price = float(cur_pos['markPrice'])
