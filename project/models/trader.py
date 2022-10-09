@@ -63,11 +63,6 @@ class Position:
 	def increased(self):
 		return abs(self.amount) > abs(self.prev.amount) if self.prev else True
 
-	def deposit_portion(self, deposit):
-		if isinstance(deposit, Profit) or isinstance(deposit, Trader):
-			deposit = deposit.deposit
-		return self.total_price / deposit
-
 	def chain(self, other):
 		if not other:
 			return self
