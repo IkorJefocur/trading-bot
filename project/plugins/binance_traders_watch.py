@@ -50,7 +50,7 @@ class BinanceTradersWatch(Plugin):
 			return 10
 
 		performance = self.trader.performance('daily')
-		performance.update(Profit(roi, pnl))
+		performance.last_position = Profit(roi, pnl)
 		self.events.performance_updated(performance)
 
 		return (datetime.combine(
@@ -91,12 +91,13 @@ class BinanceTradersWatch(Plugin):
 		for _, stats in self.trader.position_stats():
 			position = stats.last_position
 			if stats not in positions_to_update and position:
-				stats.update(None)
+				stats.last_position = None
 				self.events.position_closed(position)
 
 		for stats, position in positions_to_update.items():
 			if not position.chain_equal(stats.last_position):
-				position = stats.update(position, chain = True)
+				stats.last_position = position.chain(stats.last_position)
+				position = stats.last_position
 				event = self.events.position_opened if not position.prev \
 					else self.events.position_increased if position.increased \
 					else self.events.position_decreased
