@@ -1,4 +1,4 @@
-from datetime import timedelta, date, time, datetime
+from datetime import timedelta, date, time, datetime, timezone
 from asyncio import sleep
 from events import Events
 from aiohttp import ClientError
@@ -56,9 +56,8 @@ class BinanceTradersWatch(Plugin):
 		self.events.performance_updated(performance)
 
 		return (datetime.combine(
-			date.today() + timedelta(days = 1),
-			time(second = 5)
-		) - datetime.now()).seconds
+			date.today() + timedelta(days = 1), time(second = 5), timezone.utc
+		) - datetime.now(timezone.utc)).seconds
 
 	@Plugin.loop_bound
 	async def update_positions(self):
