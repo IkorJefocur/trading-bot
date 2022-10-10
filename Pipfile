@@ -10,6 +10,7 @@ pybit = "*"
 python-dotenv = "*"
 telethon = "*"
 events = {git = "https://github.com/IkorJefocur/python-events"}
+aiohttp = "*"
 
 [dev-packages]
 
