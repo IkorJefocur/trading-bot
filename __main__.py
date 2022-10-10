@@ -17,7 +17,7 @@ if path.isfile('config.json'):
 
 traders_http = HTTPClient(config.get('traders_proxies', []))
 bybit = Bybit(
-	testnet = True,
+	testnet = config.get('bybit_testnet', False),
 	key = environ['BYBIT_KEY'],
 	secret = environ['BYBIT_SECRET']
 )
