@@ -52,7 +52,7 @@ class BinanceTradersWatch(Plugin):
 			return 10
 
 		performance = self.trader.performance('daily')
-		performance.last_position = Profit(roi, pnl)
+		performance.current_profit = Profit(roi, pnl)
 		self.events.performance_updated(performance)
 
 		return (datetime.combine(
