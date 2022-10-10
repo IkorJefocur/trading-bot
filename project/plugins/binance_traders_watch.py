@@ -16,6 +16,7 @@ class BinanceTradersWatch(Plugin):
 			'position_increased', 'position_decreased'
 		))
 
+		self.starting_point = None
 		self.trader = trader
 
 	def start_lifecycle(self):
@@ -24,6 +25,7 @@ class BinanceTradersWatch(Plugin):
 
 	async def watch(self):
 		performance_update_time = datetime.now()
+		self.starting_point = datetime.now()
 
 		while True:
 			if performance_update_time <= datetime.now():
@@ -85,12 +87,13 @@ class BinanceTradersWatch(Plugin):
 				continue
 
 			position = Position(time, symbol, price, amount, Profit(roe, pnl))
-			stats = self.trader.position_stats(position)
-			positions_to_update[stats] = position
+			if self.available(position):
+				stats = self.trader.position_stats(position)
+				positions_to_update[stats] = position
 
 		for _, stats in self.trader.position_stats():
 			position = stats.last_position
-			if stats not in positions_to_update and position:
+			if stats not in positions_to_update and self.available(position):
 				stats.last_position = None
 				position = position.close()
 				self.events.position_updated(position)
@@ -98,7 +101,8 @@ class BinanceTradersWatch(Plugin):
 
 		for stats, position in positions_to_update.items():
 			if not position.chain_equal(stats.last_position):
-				stats.last_position = position.chain(stats.last_position)
+				stats.last_position = position.chain(stats.last_position) \
+					if self.available(stats.last_position) else position
 				position = stats.last_position
 				event = self.events.position_opened if not position.prev \
 					else self.events.position_increased if position.increased \
@@ -114,3 +118,7 @@ class BinanceTradersWatch(Plugin):
 			proxy = self.service.get_proxy(),
 			raise_for_status = True
 		)).json()
+
+	def available(self, position):
+		return bool(position and self.starting_point) \
+			and position.entry.time > self.starting_point
