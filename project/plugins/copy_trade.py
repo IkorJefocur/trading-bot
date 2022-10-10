@@ -1,3 +1,4 @@
+from math import ceil, log
 from ..base import Plugin
 
 class CopyTrade(Plugin):
@@ -30,7 +31,8 @@ class CopyTrade(Plugin):
 		)
 		qty = abs(position.amount_diff) * await self.deposit_ratio()
 		qty = min(max(qty, limits['min_trading_qty']), limits['max_trading_qty'])
-		return round(qty / limits['qty_step']) * limits['qty_step']
+		step = limits['qty_step']
+		return round(round(qty / step) * step, ceil(-log(step, 10)))
 
 	@Plugin.loop_bound
 	async def deposit_ratio(self):
