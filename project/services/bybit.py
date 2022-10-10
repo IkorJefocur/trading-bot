@@ -6,7 +6,6 @@ class Bybit(Service):
 
 	def __init__(self, key, secret, testnet = False):
 		super().__init__(None)
-		self.executor = ThreadPoolExecutor()
 
 		self.usdt_perpetual = usdt_perpetual.HTTP(
 			endpoint = 'https://api-testnet.bybit.com' if testnet \
@@ -14,6 +13,3 @@ class Bybit(Service):
 			api_key = key,
 			api_secret = secret
 		)
-
-	def send_sync_task(self, fn):
-		return self.loop.run_in_executor(fn(), self.executor)
