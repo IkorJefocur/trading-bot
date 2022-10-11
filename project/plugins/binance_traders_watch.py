@@ -68,13 +68,13 @@ class BinanceTradersWatch(Plugin):
 				'https://www.binance.com/bapi/futures/v1/public'
 				+ '/future/leaderboard/getOtherPosition'
 			))['data']
-			current_positions = list(data['otherPositionRetList'])
+			current = list(data['otherPositionRetList'])
 
 		except (ClientError, LookupError, TypeError):
 			return 10
 
-		positions_to_update = {}
-		for cur_pos in current_positions:
+		to_update = {}
+		for cur_pos in current:
 			try:
 				symbol = Symbol(cur_pos['symbol'])
 				time = datetime.fromtimestamp(cur_pos['updateTimeStamp'] / 1000)
@@ -89,10 +89,10 @@ class BinanceTradersWatch(Plugin):
 
 			position = Position(time, symbol, price, amount, Profit(roe, pnl))
 			category = self.trader.position_category(position)
-			positions_to_update[category] = position
+			to_update[category] = position
 
 		for category, position in self.opened_positions.items():
-			if category not in positions_to_update:
+			if category not in to_update:
 				del self.opened_positions[category]
 				if self.available(position):
 					position = position.close()
@@ -100,11 +100,11 @@ class BinanceTradersWatch(Plugin):
 					self.events.position_updated(position)
 					self.events.position_closed(position)
 
-		for category, position in positions_to_update.items():
-			prev_position = self.opened_positions.get(category)
-			if not position.chain_equal(prev_position):
+		for category, position in to_update.items():
+			prev = self.opened_positions.get(category)
+			if not position.chain_equal(prev):
 				position = self.opened_positions[category] = \
-					position.chain(prev_position) if prev_position else position
+					position.chain(prev) if prev else position
 				if self.available(position):
 					self.trader.position_stats(position).last_position = position
 					event = self.events.position_opened if not position.prev \
