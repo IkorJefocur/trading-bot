@@ -17,6 +17,8 @@ class BinanceTradersWatch(Plugin):
 		))
 
 		self.starting_point = None
+		self.opened_positions = {}
+
 		self.trader = trader
 
 	def start_lifecycle(self):
@@ -86,28 +88,30 @@ class BinanceTradersWatch(Plugin):
 				continue
 
 			position = Position(time, symbol, price, amount, Profit(roe, pnl))
-			if self.available(position):
-				stats = self.trader.position_stats(position)
-				positions_to_update[stats] = position
+			category = self.trader.position_category(position)
+			positions_to_update[category] = position
 
-		for _, stats in self.trader.position_stats():
-			position = stats.last_position
-			if stats not in positions_to_update and self.available(position):
-				stats.last_position = None
-				position = position.close()
-				self.events.position_updated(position)
-				self.events.position_closed(position)
+		for category, position in self.opened_positions.items():
+			if category not in positions_to_update:
+				del self.opened_positions[category]
+				if self.available(position):
+					position = position.close()
+					self.trader.position_stats(position).last_position = position
+					self.events.position_updated(position)
+					self.events.position_closed(position)
 
-		for stats, position in positions_to_update.items():
-			if not position.chain_equal(stats.last_position):
-				stats.last_position = position.chain(stats.last_position) \
-					if self.available(stats.last_position) else position
-				position = stats.last_position
-				event = self.events.position_opened if not position.prev \
-					else self.events.position_increased if position.increased \
-					else self.events.position_decreased
-				self.events.position_updated(position)
-				event(position)
+		for category, position in positions_to_update.items():
+			prev_position = self.opened_positions.get(category)
+			if not position.chain_equal(prev_position):
+				position = self.opened_positions[category] = \
+					position.chain(prev_position) if prev_position else position
+				if self.available(position):
+					self.trader.position_stats(position).last_position = position
+					event = self.events.position_opened if not position.prev \
+						else self.events.position_increased if position.increased \
+						else self.events.position_decreased
+					self.events.position_updated(position)
+					event(position)
 
 	@Plugin.loop_bound
 	async def trader_related_request(self, url):
