@@ -94,7 +94,7 @@ class BinanceTradersWatch(Plugin):
 			category = self.trader.position_category(position)
 			to_update[category] = position
 
-		for category, position in self.opened_positions.items():
+		for category, position in [*self.opened_positions.items()]:
 			if category not in to_update:
 				del self.opened_positions[category]
 				if self.available(position):
