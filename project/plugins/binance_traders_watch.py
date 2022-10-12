@@ -1,7 +1,7 @@
 from datetime import timedelta, date, time, datetime, timezone
-from asyncio import sleep
+from asyncio import sleep, exceptions as asyncexc
 from events import Events
-from aiohttp import ClientError
+from aiohttp import ClientTimeout, ClientError
 from ..base import Plugin
 from ..models.trader import Symbol, Profit, Position, Trader
 
@@ -15,6 +15,7 @@ class BinanceTradersWatch(Plugin):
 			'position_updated', 'position_opened', 'position_closed',
 			'position_increased', 'position_decreased'
 		))
+		self.http_timeout = ClientTimeout(total = 5)
 
 		self.starting_point = None
 		self.opened_positions = {}
@@ -50,7 +51,7 @@ class BinanceTradersWatch(Plugin):
 			roi = float(data[0]['value'])
 			pnl = float(data[1]['value'])
 
-		except (ClientError, LookupError, ValueError):
+		except (ClientError, LookupError, ValueError, asyncexc.TimeoutError):
 			return 10
 
 		performance = self.trader.performance('daily')
@@ -72,6 +73,8 @@ class BinanceTradersWatch(Plugin):
 
 		except (ClientError, LookupError, TypeError):
 			return 10
+		except asyncexc.TimeoutError:
+			return 5
 
 		to_update = {}
 		for cur_pos in current:
@@ -119,7 +122,8 @@ class BinanceTradersWatch(Plugin):
 			url,
 			json = {'tradeType': 'PERPETUAL', 'encryptedUid': self.trader.id},
 			proxy = self.service.get_proxy(),
-			raise_for_status = True
+			raise_for_status = True,
+			timeout = self.http_timeout
 		)).json()
 
 	def available(self, position):
