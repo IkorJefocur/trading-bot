@@ -1,7 +1,8 @@
 from datetime import date
 from json import dumps, loads
 from ..base import Plugin
-from ..models.trader import Profit, PositionStats, Performance, Trader
+from ..models.position import Profit
+from ..models.trader import PositionStats, Performance, Trader
 
 class FileManager(Plugin):
 

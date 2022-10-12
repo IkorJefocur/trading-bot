@@ -3,7 +3,8 @@ from asyncio import sleep, exceptions as asyncexc
 from events import Events
 from aiohttp import ClientTimeout, ClientError
 from ..base import Plugin
-from ..models.trader import Symbol, Profit, Position, Trader
+from ..models.position import Symbol, Profit, Position
+from ..models.trader import Trader
 
 class BinanceTradersWatch(Plugin):
 
