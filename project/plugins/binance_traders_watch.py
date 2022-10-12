@@ -91,7 +91,7 @@ class BinanceTradersWatch(Plugin):
 			except (LookupError, ValueError, TypeError):
 				continue
 
-			position = Position(time, symbol, price, amount, Profit(roe, pnl))
+			position = Position(symbol, price, amount, Profit(roe, pnl), time)
 			category = self.trader.position_category(position)
 			to_update[category] = position
 

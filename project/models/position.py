@@ -35,9 +35,9 @@ class Profit:
 
 class Position:
 
-	def __init__(self, time, symbol, price, amount, profit):
+	def __init__(self, symbol, price, amount, profit, time = None):
 		self.prev = None
-		self.time = time
+		self.time = time or datetime.now()
 		self.symbol = symbol
 		self.price = price
 		self.amount = amount
@@ -83,7 +83,7 @@ class Position:
 
 	def close(self):
 		return Position(
-			datetime.now(), self.symbol, self.price, 0, self.profit
+			self.symbol, self.price, 0, self.profit
 		).chain(self)
 
 class TradingAccount:
