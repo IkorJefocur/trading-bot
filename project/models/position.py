@@ -88,5 +88,29 @@ class Position:
 
 class TradingAccount:
 
+	def __init__(self, deposit):
+		self.deposit = deposit
+		self.opened_positions = {}
+
+	def opened_position(self, matcher = None):
+		if not matcher:
+			return [*self.opened_positions.values()]
+		return self.opened_positions.get(self.position_category(matcher))
+
+	def has_position(self, position):
+		return position.chain_equal(self.opened_position(position))
+
+	def add_position(self, position):
+		category = self.position_category(position)
+		position = position.chain(self.opened_positions.get(category))
+
+		if position.closed:
+			if category in self.opened_positions:
+				del self.opened_positions[category]
+		else:
+			self.opened_positions[category] = position
+
+		return position
+
 	def position_category(self, position):
 		return f"{'LONG' if position.long else 'SHORT'}-{position.symbol.value}"

@@ -88,6 +88,7 @@ class Performance:
 class Trader(TradingAccount):
 
 	def __init__(self, uid, performance = [], positions = {}):
+		super().__init__(0)
 		self.id = uid
 		self.all_periods_performance = {
 			**{period: Performance(period) for period in Performance.periods},
@@ -100,6 +101,13 @@ class Trader(TradingAccount):
 	@property
 	def deposit(self):
 		return self.valuable_performance().current_profit.deposit
+	@deposit.setter
+	def deposit(self, value): pass
+
+	def add_position(self, position):
+		position = super().add_position(position)
+		self.position_stats(position).last_position = position
+		return position
 
 	def performance(self, period = None):
 		return self.all_periods_performance[period] if period \

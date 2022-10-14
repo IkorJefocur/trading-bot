@@ -19,7 +19,7 @@ class BinanceTradersWatch(Plugin):
 		self.http_timeout = ClientTimeout(total = 5)
 
 		self.starting_point = None
-		self.opened_positions = {}
+		self.opened_before_start = set()
 
 		self.trader = trader
 
@@ -95,27 +95,26 @@ class BinanceTradersWatch(Plugin):
 			category = self.trader.position_category(position)
 			to_update[category] = position
 
-		for category, position in [*self.opened_positions.items()]:
-			if category not in to_update:
-				del self.opened_positions[category]
-				if self.available(position):
-					position = position.close()
-					self.trader.position_stats(position).last_position = position
-					self.events.position_updated(position)
-					self.events.position_closed(position)
+		for position in self.trader.opened_position():
+			if (
+				self.trader.position_category(position) not in to_update
+				and self.available(position, False)
+			):
+				position = self.trader.add_position(position.close())
+				self.events.position_updated(position)
+				self.events.position_closed(position)
 
 		for category, position in to_update.items():
-			prev = self.opened_positions.get(category)
-			if not position.chain_equal(prev):
-				position = self.opened_positions[category] = \
-					position.chain(prev) if prev else position
-				if self.available(position):
-					self.trader.position_stats(position).last_position = position
-					event = self.events.position_opened if not position.prev \
-						else self.events.position_increased if position.increased \
-						else self.events.position_decreased
-					self.events.position_updated(position)
-					event(position)
+			if (
+				not self.trader.has_position(position)
+				and self.available(position, True)
+			):
+				position = self.trader.add_position(position)
+				event = self.events.position_opened if not position.prev \
+					else self.events.position_increased if position.increased \
+					else self.events.position_decreased
+				self.events.position_updated(position)
+				event(position)
 
 	@Plugin.loop_bound
 	async def trader_related_request(self, url):
@@ -127,6 +126,15 @@ class BinanceTradersWatch(Plugin):
 			timeout = self.http_timeout
 		)).json()
 
-	def available(self, position):
-		return bool(position and self.starting_point) \
-			and position.entry.time > self.starting_point
+	def available(self, position, remember):
+		if not self.starting_point:
+			return True
+		category = self.trader.position_category(position)
+		if category in self.opened_before_start:
+			if not remember:
+				self.opened_before_start.remove(category)
+			return False
+		available = position.entry.time > self.starting_point
+		if not available and remember:
+			self.opened_before_start.add(category)
+		return available
