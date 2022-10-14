@@ -32,14 +32,18 @@ class Service:
 		run_coroutine_threadsafe(coro, self.loop) \
 			.add_done_callback(propagate_future_exception)
 
+	async def run_task(self, coro):
+		return await wrap_future(run_coroutine_threadsafe(coro, self.loop))
+
+	def run_task_sync(self, coro, timeout = None):
+		return run_coroutine_threadsafe(coro, self.loop).result(timeout)
+
 class Plugin:
 
 	@staticmethod
 	def loop_bound(method):
-		async def bound(self, *args, **kwargs):
-			return await wrap_future(run_coroutine_threadsafe(
-				method(self, *args, **kwargs), self.service.loop
-			))
+		def bound(self, *args, **kwargs):
+			return self.service.run_task(method(self, *args, **kwargs))
 		return bound
 
 	def __init__(self, service = None):
