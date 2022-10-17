@@ -59,8 +59,6 @@ class TraderFormat(Format):
 
 	def dump(self, trader):
 		return super().dump({
-			'uid': trader.id,
-
 			'performance': {
 				perf.period: {
 					'date': perf.current_date.isocalendar(),
@@ -85,8 +83,6 @@ class TraderFormat(Format):
 	def parse(self, trader):
 		trader = super().parse(trader)
 		return Trader(
-			trader['uid'],
-
 			[Performance(
 				period, date.fromisocalendar(*perf['date']), perf['total'],
 				self.parse_profit(perf['current']),

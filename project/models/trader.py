@@ -87,9 +87,8 @@ class Performance:
 
 class Trader(TradingAccount):
 
-	def __init__(self, uid, performance = [], positions = {}):
+	def __init__(self, performance = [], positions = {}):
 		super().__init__(0)
-		self.id = uid
 		self.all_periods_performance = {
 			**{period: Performance(period) for period in Performance.periods},
 			**{perf.period: perf for perf in performance}

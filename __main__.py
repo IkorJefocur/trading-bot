@@ -37,7 +37,8 @@ def make_trader_watch(uid):
 	)
 	watch = BinanceTradersWatch(
 		traders_http,
-		trader = dump.load() or Trader(uid)
+		trader = dump.load() or Trader(),
+		uid = uid
 	)
 	copy = CopyTrade(
 		bybit,

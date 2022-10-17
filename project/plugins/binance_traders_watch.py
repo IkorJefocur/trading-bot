@@ -8,7 +8,7 @@ from ..models.trader import Trader
 
 class BinanceTradersWatch(Plugin):
 
-	def __init__(self, http_service, trader):
+	def __init__(self, http_service, trader, uid):
 		super().__init__(http_service)
 		self.events = Events((
 			'trader_fetched',
@@ -22,6 +22,7 @@ class BinanceTradersWatch(Plugin):
 		self.opened_before_start = set()
 
 		self.trader = trader
+		self.id = uid
 
 	def start_lifecycle(self):
 		super().start_lifecycle()
@@ -120,7 +121,7 @@ class BinanceTradersWatch(Plugin):
 	async def trader_related_request(self, url):
 		return await (await self.service.target.post(
 			url,
-			json = {'tradeType': 'PERPETUAL', 'encryptedUid': self.trader.id},
+			json = {'tradeType': 'PERPETUAL', 'encryptedUid': self.id},
 			proxy = self.service.get_proxy(),
 			raise_for_status = True,
 			timeout = self.http_timeout
