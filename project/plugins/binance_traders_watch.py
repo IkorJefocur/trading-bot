@@ -3,8 +3,7 @@ from asyncio import sleep, exceptions as asyncexc
 from events import Events
 from aiohttp import ClientTimeout, ClientError
 from ..base import Plugin
-from ..models.position import Symbol, Profit, Position
-from ..models.trader import Trader
+from ..models.position import Symbol, Profit, PlacedPosition
 
 class BinanceTradersWatch(Plugin):
 
@@ -86,13 +85,12 @@ class BinanceTradersWatch(Plugin):
 				entry_price = float(cur_pos['entryPrice'])
 				price = float(cur_pos['markPrice'])
 				amount = float(cur_pos['amount'])
-				roe = float(cur_pos['roe'])
-				pnl = float(cur_pos['pnl'])
+				profit = Profit(float(cur_pos['roe']), float(cur_pos['pnl']))
 
 			except (LookupError, ValueError, TypeError):
 				continue
 
-			position = Position(symbol, price, amount, Profit(roe, pnl), time)
+			position = PlacedPosition(symbol, price, amount, profit, time)
 			category = self.trader.position_category(position)
 			to_update[category] = position
 
@@ -101,7 +99,8 @@ class BinanceTradersWatch(Plugin):
 				self.trader.position_category(position) not in to_update
 				and self.available(position, False)
 			):
-				position = self.trader.add_position(position.close())
+				position = position.close()
+				self.trader.update_position(position)
 				self.events.position_updated(position)
 				self.events.position_closed(position)
 
@@ -110,7 +109,8 @@ class BinanceTradersWatch(Plugin):
 				not self.trader.has_position(position)
 				and self.available(position, True)
 			):
-				position = self.trader.add_position(position)
+				position = position.chain(self.trader.opened_position(position))
+				self.trader.update_position(position)
 				event = self.events.position_opened if not position.prev \
 					else self.events.position_increased if position.increased \
 					else self.events.position_decreased

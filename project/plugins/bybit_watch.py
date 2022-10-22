@@ -1,10 +1,12 @@
 from ..base import Plugin
-from ..models.user import SymbolConstraint
+from ..models.position import Symbol
+from ..models.market import SymbolConstraint
 
-class BybitUserControl(Plugin):
+class BybitWatch(Plugin):
 
-	def __init__(self, bybit_service, user):
+	def __init__(self, bybit_service, market, user):
 		super().__init__(bybit_service)
+		self.market = market
 		self.user = user
 
 	def start_lifecycle(self):
@@ -19,10 +21,11 @@ class BybitUserControl(Plugin):
 
 		for symbol in self.service.usdt_perpetual.query_symbol()['result']:
 			constraint = symbol['lot_size_filter']
-			self.user.set_constraint(symbol['name'], SymbolConstraint(
-				constraint['min_trading_qty'], constraint['max_trading_qty'],
-				constraint['qty_step']
-			))
+			if Symbol.valid(symbol['name']):
+				self.market.set_constraint(Symbol(symbol['name']), SymbolConstraint(
+					constraint['min_trading_qty'], constraint['max_trading_qty'],
+					constraint['qty_step']
+				))
 
 	async def watch(self):
 		self.service.usdt_perpetual_ws.wallet_stream(self.update_deposit)

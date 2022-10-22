@@ -1,15 +1,23 @@
-from datetime import timedelta, datetime
+from datetime import datetime
 
 class Symbol:
 
 	existing_currencies = {
+		'USD',
 		'USDT'
 	}
+
+	@classmethod
+	def valid(cls, value):
+		return bool(next(
+			(cur for cur in cls.existing_currencies if value.endswith(cur)),
+			False
+		))
 
 	def __init__(self, value):
 		try:
 			self.currency = next(
-				cur for cur in self.existing_currencies if cur in value
+				cur for cur in self.existing_currencies if value.endswith(cur)
 			)
 		except StopIteration:
 			raise ValueError(f'Currency for symbol {value} does not exists')
@@ -35,13 +43,20 @@ class Profit:
 
 class Position:
 
-	def __init__(self, symbol, price, amount, profit, time = None):
+	def __init__(self, symbol, price, amount, profit):
 		self.prev = None
-		self.time = time or datetime.now()
 		self.symbol = symbol
 		self.price = price
 		self.amount = amount
 		self.profit = profit
+
+	def __eq__(self, other):
+		return (
+			isinstance(other, Position)
+			and self.symbol == other.symbol
+			and self.price == other.price
+			and self.amount == other.amount
+		)
 
 	@property
 	def entry(self):
@@ -70,47 +85,39 @@ class Position:
 		return abs(self.amount) > abs(self.prev.amount) if self.prev else True
 
 	def chain(self, other):
-		if not other:
-			return self
-		if self.time > other.time:
-			self.prev = other
-		if self.time == other.time:
-			self.prev = other.prev
+		if other:
+			self.prev = other.prev if self == other else other
 		return self
-
-	def chain_equal(self, other):
-		return bool(other) and self.time == other.time
 
 	def close(self):
 		return Position(
 			self.symbol, self.price, 0, self.profit
 		).chain(self)
 
-class TradingAccount:
+class PlacedPosition(Position):
 
-	def __init__(self, deposit):
-		self.deposit = deposit
-		self.opened_positions = {}
+	def __init__(self, symbol, price, amount, profit, time = None):
+		super().__init__(symbol, price, amount, profit)
+		self.time = time or datetime.now()
 
-	def opened_position(self, matcher = None):
-		if not matcher:
-			return [*self.opened_positions.values()]
-		return self.opened_positions.get(self.position_category(matcher))
+	def __eq__(self, other):
+		return self.time == other.time if isinstance(other, PlacedPosition) \
+			else super().__eq__(other)
 
-	def has_position(self, position):
-		return position.chain_equal(self.opened_position(position))
+class ReflectivePosition(Position):
 
-	def add_position(self, position):
-		category = self.position_category(position)
-		position = position.chain(self.opened_positions.get(category))
+	def __init__(self, symbol, price, parts, profit):
+		super().__init__(symbol, price, 0, profit)
+		self.parts = parts
 
-		if position.closed:
-			if category in self.opened_positions:
-				del self.opened_positions[category]
-		else:
-			self.opened_positions[category] = position
+	@property
+	def amount(self):
+		return sum(self.parts_chain.values())
+	@amount.setter
+	def amount(self, value): pass
 
-		return position
-
-	def position_category(self, position):
-		return f"{'LONG' if position.long else 'SHORT'}-{position.symbol.value}"
+	@property
+	def parts_chain(self):
+		prev = self.prev.parts_chain \
+			if isinstance(self.prev, ReflectivePosition) else {}
+		return {**prev, **self.parts}

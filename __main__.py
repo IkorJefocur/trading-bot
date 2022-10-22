@@ -3,12 +3,12 @@ from asyncio import new_event_loop
 from itertools import chain
 from json import load
 from dotenv import load_dotenv
-from project.models.user import User
-from project.models.trader import Trader
+from project.models.market import Market
+from project.models.trader import Trader, User
 from project.services.http_client import HTTPClient
 from project.services.bybit import Bybit
 from project.plugins.binance_traders_watch import BinanceTradersWatch
-from project.plugins.bybit_user_control import BybitUserControl
+from project.plugins.bybit_watch import BybitWatch
 from project.plugins.copy_trade import CopyTrade
 from project.plugins.file_manager import FileManager, TraderFormat
 
@@ -26,8 +26,9 @@ bybit = Bybit(
 
 makedirs('db/traders', exist_ok = True)
 trader_format = TraderFormat()
-user = BybitUserControl(
+bybit_watch = BybitWatch(
 	bybit,
+	market = Market(),
 	user = User(0)
 )
 def make_trader_watch(uid):
@@ -42,19 +43,20 @@ def make_trader_watch(uid):
 	)
 	copy = CopyTrade(
 		bybit,
-		user = user.user,
+		market = bybit_watch.market,
+		user = bybit_watch.user,
 		trader = watch.trader,
 		allowed_symbols = config.get('traders_symbols')
 	)
 	watch.events.trader_fetched += lambda: dump.save(watch.trader)
 	watch.events.position_updated += copy.copy_position
 	return [dump, copy, watch]
-traders_watch = [*chain.from_iterable(
+traders_logic = [*chain.from_iterable(
 	make_trader_watch(uid) for uid in config.get('traders', [])
 )]
 
-for plugin in [user, *traders_watch]:
+for plugin in [bybit_watch, *traders_logic]:
 	plugin.start_lifecycle()
 print('=== STARTED ===')
-print(f'Balance: {user.user.deposit} USDT')
+print(f'Balance: {bybit_watch.user.deposit} USDT')
 new_event_loop().run_forever()
