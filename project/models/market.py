@@ -1,7 +1,7 @@
 from math import copysign
 from .position import Position
 
-class SymbolConstraint:
+class CoinConstraint:
 
 	def __init__(self, min_amount, max_amount, amount_step = None):
 		self.min = min_amount
@@ -22,26 +22,37 @@ class SymbolConstraint:
 	def float_fix(self, value):
 		return round(value, 10)
 
+class Coin:
+
+	def __init__(
+		self, symbol,
+		constraint = CoinConstraint(0, float('inf'))
+	):
+		self.symbol = symbol
+		self.constraint = constraint
+
 class Market:
 
 	def __init__(self):
-		self.constraints = {}
+		self.coins = {}
 
-	def constraint(self, symbol):
-		return self.constraints.get(symbol.value) \
-			or SymbolConstraint(0, float('inf'))
+	def coin(self, symbol):
+		return self.coins.get(symbol.value)
 
-	def set_constraint(self, symbol, constraint):
-		self.constraints[symbol.value] = constraint
+	def add_coin(self, coin):
+		self.coins[coin.symbol.value] = coin
 
 	def adjust_position(self, full):
-		constraint = self.constraint(full.symbol)
-		amount = constraint.round(full.amount)
+		coin = self.coin(full.symbol)
+		if not coin:
+			return
+
+		amount = coin.constraint.round(full.amount)
 		filled = amount - full.amount_diff
 		head = None
 
 		while abs(filled) < abs(amount):
-			filled = constraint.fit(amount - filled, filled)
+			filled = coin.constraint.fit(amount - filled, filled)
 			head = Position(
 				full.symbol, full.price, filled, full.profit
 			).chain(head)

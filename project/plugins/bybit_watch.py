@@ -1,6 +1,6 @@
 from ..base import Plugin
 from ..models.position import Symbol
-from ..models.market import SymbolConstraint
+from ..models.market import CoinConstraint, Coin
 
 class BybitWatch(Plugin):
 
@@ -22,9 +22,13 @@ class BybitWatch(Plugin):
 		for symbol in self.service.usdt_perpetual.query_symbol()['result']:
 			constraint = symbol['lot_size_filter']
 			if Symbol.valid(symbol['name']):
-				self.market.set_constraint(Symbol(symbol['name']), SymbolConstraint(
-					constraint['min_trading_qty'], constraint['max_trading_qty'],
-					constraint['qty_step']
+				self.market.add_coin(Coin(
+					Symbol(symbol['name']),
+					CoinConstraint(
+						constraint['min_trading_qty'],
+						constraint['max_trading_qty'],
+						constraint['qty_step']
+					)
 				))
 
 	async def watch(self):
