@@ -121,3 +121,11 @@ class ReflectivePosition(Position):
 		prev = self.prev.parts_chain \
 			if isinstance(self.prev, ReflectivePosition) else {}
 		return {**prev, **self.parts}
+
+	def part(self, key):
+		return self.parts.get(key, 0)
+
+	def part_diff(self, key):
+		return self.part(key) - self.prev.part(key) \
+			if isinstance(self.prev, ReflectivePosition) \
+			else self.part(key)
