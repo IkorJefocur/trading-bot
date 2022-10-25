@@ -17,7 +17,7 @@ class Strategy:
 		for source in market.adjust_position(full):
 			trader_part += source.amount_diff
 			head = ReflectivePosition(
-				source.symbol, source.price, {trader: trader_part}, source.profit
+				source.symbol, source.price, {trader: trader_part}
 			).chain(head)
 			yield head
 
@@ -27,6 +27,6 @@ class TradingStrategy(Strategy):
 		amount = self.deposit_relative_amount(base, trader, user)
 
 		position = ReflectivePosition(
-			base.symbol, base.price, {trader: amount}, base.profit
+			base.symbol, base.price, {trader: amount}
 		).chain(user.opened_position(base))
 		yield from self.adjust_reflection(position, trader, market)

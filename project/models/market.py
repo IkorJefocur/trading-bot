@@ -54,6 +54,6 @@ class Market:
 		while abs(filled) < abs(amount):
 			filled = coin.constraint.fit(amount - filled, filled)
 			head = Position(
-				full.symbol, full.price, filled, full.profit
+				full.symbol, full.price, filled
 			).chain(head)
 			yield head

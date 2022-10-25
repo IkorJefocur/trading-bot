@@ -43,12 +43,11 @@ class Profit:
 
 class Position:
 
-	def __init__(self, symbol, price, amount, profit):
+	def __init__(self, symbol, price, amount):
 		self.prev = None
 		self.symbol = symbol
 		self.price = price
 		self.amount = amount
-		self.profit = profit
 
 	def __eq__(self, other):
 		return (
@@ -91,13 +90,14 @@ class Position:
 
 	def close(self):
 		return Position(
-			self.symbol, self.price, 0, self.profit
+			self.symbol, self.price, 0
 		).chain(self)
 
 class PlacedPosition(Position):
 
 	def __init__(self, symbol, price, amount, profit, time = None):
-		super().__init__(symbol, price, amount, profit)
+		super().__init__(symbol, price, amount)
+		self.profit = profit
 		self.time = time or datetime.now()
 
 	def __eq__(self, other):
@@ -106,8 +106,8 @@ class PlacedPosition(Position):
 
 class ReflectivePosition(Position):
 
-	def __init__(self, symbol, price, parts, profit):
-		super().__init__(symbol, price, 0, profit)
+	def __init__(self, symbol, price, parts):
+		super().__init__(symbol, price, 0)
 		self.parts = parts
 
 	@property
