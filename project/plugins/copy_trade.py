@@ -7,7 +7,7 @@ class CopyTrade(Plugin):
 		self, bybit_service, market, user, trader, allowed_symbols = None
 	):
 		super().__init__(bybit_service)
-		self.strategy = TradingStrategy()
+		self.strategy = TradingStrategy(5)
 		self.market = market
 		self.user = user
 		self.trader = trader
