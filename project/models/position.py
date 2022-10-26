@@ -29,6 +29,10 @@ class Symbol:
 
 class Profit:
 
+	@staticmethod
+	def by_diff(less, more, multiplier = 1):
+		return Profit((more / less) - 1, (more - less) * multiplier)
+
 	def __init__(self, roe, pnl):
 		self.roe = roe
 		self.pnl = pnl
@@ -65,6 +69,11 @@ class Order(Deal):
 	def __init__(self, symbol, price, amount, buy):
 		super().__init__(symbol, price, amount)
 		self.buy = buy
+
+	def profit(self, current_profit):
+		prices = (self.price, current_price) if self.buy \
+			else (current_price, self.price)
+		return Profit.by_diff(*prices, self.amount)
 
 class Position(Deal):
 
