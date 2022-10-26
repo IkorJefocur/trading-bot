@@ -23,6 +23,11 @@ class CopyTrade(Plugin):
 
 		for position in positions:
 			constraint = self.market.coin(position.symbol).constraint
+			self.service.usdt_perpetual.set_leverage(
+				symbol = position.symbol.value,
+				buy_leverage = self.strategy.leverage,
+				sell_leverage = self.strategy.leverage
+			)
 			self.service.usdt_perpetual.place_active_order(
 				symbol = position.symbol.value,
 				side = 'Buy' if position.long == position.increased else 'Sell',
