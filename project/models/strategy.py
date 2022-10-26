@@ -6,9 +6,10 @@ class Strategy:
 	def __init__(self, leverage):
 		self.leverage = leverage
 
-	def deposit_relative_amount(self, position, trader, user):
-		return base.amount \
+	def deposit_relative_reflection(self, base, trader, user):
+		amount = base.amount \
 			* (user.deposit / trader.deposit if trader.deposit > 0 else 0)
+		return ReflectivePosition(base.symbol, base.price, {trader: amount})
 
 	def adjust_reflection(self, full, trader, market):
 		head = full.prev
@@ -24,9 +25,7 @@ class Strategy:
 class TradingStrategy(Strategy):
 
 	def copy_position(self, base, market, trader, user):
-		amount = self.deposit_relative_amount(base, trader, user)
-
-		position = ReflectivePosition(
-			base.symbol, base.price, {trader: amount}
+		position = self.deposit_relative_reflection(
+			base, trader, user
 		).chain(user.opened_position(base))
 		yield from self.adjust_reflection(position, trader, market)
