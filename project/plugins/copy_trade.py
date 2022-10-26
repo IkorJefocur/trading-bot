@@ -1,3 +1,4 @@
+from pybit import InvalidRequestError
 from ..base import Plugin
 from ..models.strategy import TradingStrategy
 
@@ -22,12 +23,17 @@ class CopyTrade(Plugin):
 		)
 
 		for position in positions:
+			try:
+				self.service.usdt_perpetual.set_leverage(
+					symbol = position.symbol.value,
+					buy_leverage = self.strategy.leverage,
+					sell_leverage = self.strategy.leverage
+				)
+			except InvalidRequestError as error:
+				if error.status_code != 34036:
+					raise
+
 			constraint = self.market.coin(position.symbol).constraint
-			self.service.usdt_perpetual.set_leverage(
-				symbol = position.symbol.value,
-				buy_leverage = self.strategy.leverage,
-				sell_leverage = self.strategy.leverage
-			)
 			self.service.usdt_perpetual.place_active_order(
 				symbol = position.symbol.value,
 				side = 'Buy' if position.long == position.increased else 'Sell',
