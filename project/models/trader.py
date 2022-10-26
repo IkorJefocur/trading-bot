@@ -68,4 +68,23 @@ class Trader(TradingAccount):
 		return self.positions_stats[category]
 
 class User(TradingAccount):
-	pass
+
+	def __init__(self, deposit):
+		super().__init__(deposit)
+		self.opened_orders = set()
+
+	def has_order(self, order):
+		return order in self.opened_orders
+
+	def place_order(self, order):
+		self.opened_orders.add(order)
+
+	def close_order(self, order):
+		self.opened_orders.remove(order)
+
+	def update_position(self, position, with_order = False):
+		super().update_position(position)
+		if with_order:
+			order = position.generate_order()
+			self.add_order(order)
+			return order

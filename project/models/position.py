@@ -41,13 +41,36 @@ class Profit:
 	def deposit(self):
 		return self.pnl / self.roe if self.roe != 0 else 0
 
-class Position:
+class Deal:
 
 	def __init__(self, symbol, price, amount):
-		self.prev = None
 		self.symbol = symbol
 		self.price = price
 		self.amount = amount
+
+	@property
+	def total_price(self):
+		return self.price * self.amount
+
+	@property
+	def closed(self):
+		return self.amount == 0
+
+	@property
+	def long(self):
+		return self.amount > 0
+
+class Order(Deal):
+
+	def __init__(self, symbol, price, amount, buy):
+		super().__init__(symbol, price, amount)
+		self.buy = buy
+
+class Position(Deal):
+
+	def __init__(self, symbol, price, amount):
+		super().__init__(symbol, price, amount)
+		self.prev = None
 
 	def __eq__(self, other):
 		return (
@@ -62,20 +85,12 @@ class Position:
 		return self.prev.entry if self.prev else self
 
 	@property
-	def total_price(self):
-		return self.price * self.amount
-
-	@property
 	def amount_diff(self):
 		return self.amount - (self.prev.amount if self.prev else 0)
 
 	@property
-	def closed(self):
-		return self.amount == 0
-
-	@property
 	def long(self):
-		return self.amount > 0 if not self.closed \
+		return super().long if not self.closed \
 			else self.prev.long if self.prev \
 			else False
 
@@ -92,6 +107,10 @@ class Position:
 		return Position(
 			self.symbol, self.price, 0
 		).chain(self)
+
+	def generate_order(self):
+		buy = self.long == self.increased
+		return Order(self.symbol, self.price, self.amount_diff, buy)
 
 class PlacedPosition(Position):
 
