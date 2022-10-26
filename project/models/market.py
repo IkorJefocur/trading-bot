@@ -1,4 +1,4 @@
-from math import copysign
+from math import floor, copysign
 from .position import Position
 
 class CoinConstraint:
@@ -13,7 +13,7 @@ class CoinConstraint:
 
 	def round(self, value):
 		return self.float_fix(
-			round(value / self.step) * self.step if self.step else value
+			floor(value / self.step) * self.step if self.step else value
 		)
 
 	def restrict(self, value):
