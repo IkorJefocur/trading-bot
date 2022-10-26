@@ -66,9 +66,9 @@ class Deal:
 
 class Order(Deal):
 
-	def __init__(self, symbol, price, amount, buy):
-		super().__init__(symbol, price, amount)
-		self.buy = buy
+	@property
+	def place_amount(self):
+		return abs(self.amount)
 
 	def profit(self, current_profit):
 		prices = (self.price, current_price) if self.buy \
@@ -118,8 +118,7 @@ class Position(Deal):
 		).chain(self)
 
 	def generate_order(self):
-		buy = self.long == self.increased
-		return Order(self.symbol, self.price, self.amount_diff, buy)
+		return Order(self.symbol, self.price, self.amount_diff)
 
 class PlacedPosition(Position):
 
