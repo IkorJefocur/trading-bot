@@ -1,5 +1,5 @@
 from math import floor, copysign
-from .position import Position
+from .position import Order
 
 class CoinConstraint:
 
@@ -46,14 +46,9 @@ class Market:
 		coin = self.coin(full.symbol)
 		if not coin:
 			return
+		left = coin.constraint.round(full.amount_diff)
 
-		amount = coin.constraint.round(full.amount)
-		filled = amount - full.amount_diff
-		head = None
-
-		while abs(filled) < abs(amount):
-			filled = coin.constraint.fit(amount - filled, filled)
-			head = Position(
-				full.symbol, full.price, filled
-			).chain(head)
-			yield head
+		while abs(left) > 0:
+			amount = coin.constraint.fit(left)
+			yield Order(full.symbol, full.price, amount)
+			left -= amount
