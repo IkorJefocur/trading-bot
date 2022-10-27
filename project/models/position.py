@@ -75,7 +75,17 @@ class Order(Deal):
 			else (current_price, self.price)
 		return Profit.by_diff(*prices, self.amount)
 
+	def compensate(self):
+		return Order(self.symbol, self.price, -self.amount)
+
 class Position(Deal):
+
+	@staticmethod
+	def add_order(position, order):
+		return Position(
+			order.symbol, order.price,
+			(position.amount if position else 0) + order.amount
+		).chain(position)
 
 	def __init__(self, symbol, price, amount):
 		super().__init__(symbol, price, amount)
@@ -132,6 +142,17 @@ class PlacedPosition(Position):
 			else super().__eq__(other)
 
 class ReflectivePosition(Position):
+
+	@staticmethod
+	def add_order(position, order, key = None):
+		pos_amount = position.amount if position else 0
+		parts = {key: position.part(key) + order.amount} \
+			if isinstance(position, ReflectivePosition) \
+			else {None: pos_amount, key: order.amount} if key != None \
+			else {None: pos_amount + order.amount}
+		return ReflectivePosition(
+			order.symbol, order.price, parts
+		).chain(position)
 
 	def __init__(self, symbol, price, parts):
 		super().__init__(symbol, price, 0)
