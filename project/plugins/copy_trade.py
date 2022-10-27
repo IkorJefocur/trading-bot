@@ -1,3 +1,4 @@
+from datetime import timedelta, datetime
 from pybit import InvalidRequestError
 from ..base import Plugin
 from ..models.strategy import TradingStrategy
@@ -9,6 +10,8 @@ class CopyTrade(Plugin):
 	):
 		super().__init__(bybit_service)
 		self.strategy = TradingStrategy(5)
+		self.leverage_updates = {}
+
 		self.market = market
 		self.user = user
 		self.trader = trader
@@ -23,15 +26,7 @@ class CopyTrade(Plugin):
 		)
 
 		for position in positions:
-			try:
-				self.service.usdt_perpetual.set_leverage(
-					symbol = position.symbol.value,
-					buy_leverage = self.strategy.leverage,
-					sell_leverage = self.strategy.leverage
-				)
-			except InvalidRequestError as error:
-				if error.status_code != 34036:
-					raise
+			self.set_leverage(position.symbol)
 
 			constraint = self.market.coin(position.symbol).constraint
 			self.service.usdt_perpetual.place_active_order(
@@ -44,6 +39,27 @@ class CopyTrade(Plugin):
 				close_on_trigger = False
 			)
 			self.user.update_position(position)
+
+	def set_leverage(self, symbol):
+		if (
+			symbol.value in self.leverage_updates
+			and datetime.now() < \
+				self.leverage_updates[symbol.value] + timedelta(minutes = 1)
+		):
+			return
+
+		not_modified_code = 34036
+		try:
+			self.service.usdt_perpetual.set_leverage(
+				symbol = symbol.value,
+				buy_leverage = self.strategy.leverage,
+				sell_leverage = self.strategy.leverage
+			)
+		except InvalidRequestError as error:
+			if error.status_code != not_modified_code:
+				raise
+
+		self.leverage_updates[symbol.value] = datetime.now()
 
 	def filter_position(self, position):
 		return not self.allowed_symbols \
