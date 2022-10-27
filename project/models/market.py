@@ -13,8 +13,9 @@ class CoinConstraint:
 
 	def round(self, value):
 		return self.float_fix(
-			floor(value / self.step) * self.step if self.step else value
-		)
+			floor(self.float_fix(abs(value) / self.step)) \
+				* copysign(1, value) * self.step
+		) if self.step else self.float_fix(value)
 
 	def restrict(self, value):
 		return min(max(abs(value), self.min), self.max) * copysign(1, value)
@@ -48,7 +49,7 @@ class Market:
 			return
 		left = coin.constraint.round(full.amount_diff)
 
-		while abs(left) > 0:
+		while left > 0 if full.long else left < 0:
 			amount = coin.constraint.fit(left)
 			yield Order(full.symbol, full.price, amount)
 			left -= amount
