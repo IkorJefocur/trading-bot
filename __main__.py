@@ -32,7 +32,7 @@ bybit_watch = BybitCopytradingWatch(
 	market = Market(),
 	user = User(0)
 )
-def make_trader_watch(uid):
+def make_trader_watch(uid, depo):
 	dump = FileManager(
 		path = f'db/traders/{uid}.json',
 		formatter = trader_format
@@ -51,7 +51,7 @@ def make_trader_watch(uid):
 			config['leverage'],
 			config.get('margin_deposit', None),
 			config.get('margin_deposit_portion', 1),
-			1,
+			depo,
 			config.get('copy_amount_portion')
 		),
 		allowed_symbols = config.get('traders_symbols')
@@ -60,7 +60,8 @@ def make_trader_watch(uid):
 	watch.events.position_updated += copy.copy_position
 	return [dump, copy, watch]
 traders_logic = [*chain.from_iterable(
-	make_trader_watch(uid) for uid in config.get('traders', [])
+	make_trader_watch(uid, depo) for uid, depo \
+		in config.get('traders', {}).items()
 )]
 
 for plugin in [bybit_watch, *traders_logic]:
