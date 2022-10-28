@@ -5,11 +5,12 @@ from json import load
 from dotenv import load_dotenv
 from project.models.market import Market
 from project.models.trader import Trader, User
+from project.models.strategy import CopytradingStrategy
 from project.services.http_client import HTTPClient
 from project.services.bybit import Bybit
 from project.plugins.binance_traders_watch import BinanceTradersWatch
-from project.plugins.bybit_watch import BybitWatch
-from project.plugins.copy_trade import CopyTrade
+from project.plugins.bybit_watch import BybitCopytradingWatch
+from project.plugins.copy_trade import CopyCopytrade
 from project.plugins.file_manager import FileManager, TraderFormat
 
 load_dotenv('.env')
@@ -26,7 +27,7 @@ bybit = Bybit(
 
 makedirs('db/traders', exist_ok = True)
 trader_format = TraderFormat()
-bybit_watch = BybitWatch(
+bybit_watch = BybitCopytradingWatch(
 	bybit,
 	market = Market(),
 	user = User(0)
@@ -41,11 +42,12 @@ def make_trader_watch(uid):
 		trader = dump.load() or Trader(),
 		uid = uid
 	)
-	copy = CopyTrade(
+	copy = CopyCopytrade(
 		bybit,
 		market = bybit_watch.market,
 		user = bybit_watch.user,
 		trader = watch.trader,
+		trading_strategy = CopytradingStrategy(20, .02),
 		allowed_symbols = config.get('traders_symbols')
 	)
 	watch.events.trader_fetched += lambda: dump.save(watch.trader)

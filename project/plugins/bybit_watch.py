@@ -20,14 +20,13 @@ class BybitWatch(Plugin):
 		)['result']['USDT']['wallet_balance']
 
 		for symbol in self.service.usdt_perpetual.query_symbol()['result']:
-			constraint = symbol['lot_size_filter']
 			if Symbol.valid(symbol['name']):
 				self.market.add_coin(Coin(
 					Symbol(symbol['name']),
 					CoinConstraint(
-						constraint['min_trading_qty'],
-						constraint['max_trading_qty'],
-						constraint['qty_step']
+						symbol['lot_size_filter']['min_trading_qty'],
+						symbol['lot_size_filter']['max_trading_qty'],
+						symbol['lot_size_filter']['qty_step']
 					)
 				))
 
@@ -36,3 +35,31 @@ class BybitWatch(Plugin):
 
 	def update_deposit(self, data):
 		self.user.deposit = data['data'][0]['wallet_balance']
+
+class BybitCopytradingWatch(BybitWatch):
+
+	async def init(self):
+		self.user.deposit = float(self.service.target.get(
+			'/contract/v3/private/copytrading/wallet/balance',
+			coin = 'USDT'
+		)['result']['walletBalance'])
+
+		for symbol in self.service.target.get(
+			'/contract/v3/public/copytrading/symbol/list'
+		)['result']['list']:
+			if Symbol.valid(symbol['symbol']):
+				self.market.add_coin(Coin(
+					Symbol(symbol['symbol']),
+					CoinConstraint(
+						float(symbol['lotSizeFilter']['minOrderQty']),
+						float(symbol['lotSizeFilter']['maxOrderQty']),
+						float(symbol['lotSizeFilter']['qtyStep'])
+					)
+				))
+
+	async def watch(self):
+		ws = self.service.ws_private
+		ws.subscribe('copyTradeWallet', self.update_deposit)
+
+	def update_deposit(self, data):
+		self.user.depoit = data['data']['walletBalance']
