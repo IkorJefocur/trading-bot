@@ -4,12 +4,13 @@ from .position import Order, ReflectivePosition
 
 class Strategy:
 
-	def __init__(self, leverage, amount_portion = None):
+	def __init__(self, leverage, depo_portion = 1, amount_portion = None):
 		self.leverage = leverage
+		self.deposit_portion = depo_portion
 		self.copy_amount_portion = amount_portion
 
 	def deposit_relative_reflection(self, base, trader, user):
-		amount = base.amount * (
+		amount = base.amount * self.depo_portion * (
 			self.copy_amount_portion if self.copy_amount_portion \
 				else user.deposit / trader.deposit if trader.deposit > 0 \
 				else 0
@@ -28,9 +29,14 @@ class TradingStrategy(Strategy):
 
 class CopytradingStrategy(Strategy):
 
-	def __init__(self, leverage, depo_portion, amount_portion = None):
-		super().__init__(leverage, amount_portion)
-		self.deposit_portion = depo_portion
+	def __init__(
+		self, leverage,
+		margin_depo = None, margin_depo_portion = 1,
+		depo_portion = 1, amount_portion = None
+	):
+		super().__init__(leverage, depo_portion, amount_portion)
+		self.margin_deposit = margin_depo
+		self.margin_deposit_portion = margin_depo_portion
 
 	def copy_position(self, base, market, trader, user):
 		head = user.opened_position(base)
@@ -38,7 +44,9 @@ class CopytradingStrategy(Strategy):
 
 		if full.increased:
 			margin = abs(full.amount_diff) * full.price / self.leverage
-			orders_count = floor(margin / user.deposit / self.deposit_portion)
+			margin_depo = (self.margin_deposit or user.deposit) \
+				/ self.margin_deposit_portion
+			orders_count = floor(margin / margin_depo)
 			if orders_count == 0:
 				return
 			order_size = full.amount_diff / orders_count
