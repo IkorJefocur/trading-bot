@@ -18,7 +18,6 @@ class PositionStats:
 	@property
 	def last_position(self):
 		return self.last_position_val
-
 	@last_position.setter
 	def last_position(self, value):
 		self.last_position_val = value
