@@ -4,12 +4,16 @@ from .position import Order, ReflectivePosition
 
 class Strategy:
 
-	def __init__(self, leverage):
+	def __init__(self, leverage, amount_portion = None):
 		self.leverage = leverage
+		self.copy_amount_portion = amount_portion
 
 	def deposit_relative_reflection(self, base, trader, user):
-		amount = base.amount \
-			* (user.deposit / trader.deposit if trader.deposit > 0 else 0)
+		amount = base.amount * (
+			self.copy_amount_portion if self.copy_amount_portion \
+				else user.deposit / trader.deposit if trader.deposit > 0 \
+				else 0
+		)
 		return ReflectivePosition(base.symbol, base.price, {trader: amount})
 
 class TradingStrategy(Strategy):
@@ -24,8 +28,8 @@ class TradingStrategy(Strategy):
 
 class CopytradingStrategy(Strategy):
 
-	def __init__(self, leverage, depo_portion):
-		super().__init__(leverage)
+	def __init__(self, leverage, depo_portion, amount_portion = None):
+		super().__init__(leverage, amount_portion)
 		self.deposit_portion = depo_portion
 
 	def copy_position(self, base, market, trader, user):

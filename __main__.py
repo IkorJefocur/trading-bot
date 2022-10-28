@@ -49,7 +49,8 @@ def make_trader_watch(uid):
 		trader = watch.trader,
 		trading_strategy = CopytradingStrategy(
 			config['leverage'],
-			config['deposit_portion']
+			config['deposit_portion'],
+			config.get('copy_amount_portion')
 		),
 		allowed_symbols = config.get('traders_symbols')
 	)
