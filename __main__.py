@@ -47,7 +47,10 @@ def make_trader_watch(uid):
 		market = bybit_watch.market,
 		user = bybit_watch.user,
 		trader = watch.trader,
-		trading_strategy = CopytradingStrategy(20, .02),
+		trading_strategy = CopytradingStrategy(
+			config['leverage'],
+			config['deposit_portion']
+		),
 		allowed_symbols = config.get('traders_symbols')
 	)
 	watch.events.trader_fetched += lambda: dump.save(watch.trader)
