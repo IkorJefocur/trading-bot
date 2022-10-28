@@ -6,11 +6,11 @@ name = "pypi"
 [packages]
 flask = "*"
 python-telegram-bot = "*"
-pybit = "*"
 python-dotenv = "*"
 telethon = "*"
 events = {git = "https://github.com/IkorJefocur/python-events"}
 aiohttp = "*"
+pybit = {git = "https://github.com/IkorJefocur/pybit"}
 
 [dev-packages]
 
