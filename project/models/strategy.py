@@ -46,9 +46,7 @@ class CopytradingStrategy(Strategy):
 			margin = abs(full.amount_diff) * full.price / self.leverage
 			margin_depo = (self.margin_deposit or user.deposit) \
 				/ self.margin_deposit_portion
-			orders_count = floor(margin / margin_depo)
-			if orders_count == 0:
-				return
+			orders_count = min(floor(margin / margin_depo), 1)
 			order_size = full.amount_diff / orders_count
 
 			for index in range(orders_count):
