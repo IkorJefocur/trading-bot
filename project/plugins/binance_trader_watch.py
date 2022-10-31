@@ -87,12 +87,12 @@ class BinanceTraderWatch(Plugin):
 				continue
 
 			position = PlacedPosition(symbol, price, amount, profit, time)
-			category = self.trader.position_category(position)
+			category = self.trader.deal_category(position)
 			to_update[category] = position
 
 		for position in self.trader.opened_position():
 			if (
-				self.trader.position_category(position) not in to_update
+				self.trader.deal_category(position) not in to_update
 				and self.available(position, False)
 			):
 				position = position.close()
@@ -140,7 +140,7 @@ class BinanceTraderSafeWatch(BinanceTraderWatch):
 	def available(self, position, remember):
 		if not self.starting_point:
 			return True
-		category = self.trader.position_category(position)
+		category = self.trader.deal_category(position)
 		if category in self.opened_before_start:
 			if not remember:
 				self.opened_before_start.remove(category)
@@ -154,7 +154,7 @@ class BinanceTraderProfitableWatch(BinanceTraderSafeWatch):
 
 	def available(self, position, remember):
 		if position.profit.pnl < 0:
-			category = self.trader.position_category(position)
+			category = self.trader.deal_category(position)
 			self.opened_before_start.discard(category)
 			return True
 		return super().available(position, remember)

@@ -9,21 +9,21 @@ class TradingAccount:
 	def opened_position(self, matcher = None):
 		if not matcher:
 			return [*self.opened_positions.values()]
-		return self.opened_positions.get(self.position_category(matcher))
+		return self.opened_positions.get(self.deal_category(matcher))
 
 	def has_position(self, position):
 		return position == self.opened_position(position)
 
 	def update_position(self, position):
-		category = self.position_category(position)
+		category = self.deal_category(position)
 		if position.closed:
 			if category in self.opened_positions:
 				del self.opened_positions[category]
 		else:
 			self.opened_positions[category] = position
 
-	def position_category(self, position):
-		return f"{'LONG' if position.long else 'SHORT'}-{position.symbol.value}"
+	def deal_category(self, deal):
+		return f"{'LONG' if deal.long else 'SHORT'}-{deal.symbol.value}"
 
 class Trader(TradingAccount):
 
@@ -62,7 +62,7 @@ class Trader(TradingAccount):
 		if not position:
 			return self.positions_stats.items()
 
-		category = self.position_category(position)
+		category = self.deal_category(position)
 		if category not in self.positions_stats:
 			self.positions_stats[category] = PositionStats()
 		return self.positions_stats[category]
