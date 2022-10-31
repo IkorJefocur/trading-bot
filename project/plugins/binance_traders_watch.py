@@ -17,9 +17,6 @@ class BinanceTradersWatch(Plugin):
 		))
 		self.http_timeout = ClientTimeout(total = 5)
 
-		self.starting_point = None
-		self.opened_before_start = set()
-
 		self.trader = trader
 		self.id = uid
 
@@ -29,7 +26,6 @@ class BinanceTradersWatch(Plugin):
 
 	async def watch(self):
 		performance_update_time = datetime.now()
-		self.starting_point = datetime.now()
 
 		while True:
 			if performance_update_time <= datetime.now():
@@ -126,6 +122,20 @@ class BinanceTradersWatch(Plugin):
 			raise_for_status = True,
 			timeout = self.http_timeout
 		)).json()
+
+	def available(self, position, remember):
+		return True
+
+class BinanceTradersSafeWatch(BinanceTradersWatch):
+
+	def __init__(self, http_service, trader, uid):
+		super().__init__(http_service, trader, uid)
+		self.starting_point = None
+		self.opened_before_start = set()
+
+	async def watch(self):
+		self.starting_point = datetime.now()
+		await super().watch()
 
 	def available(self, position, remember):
 		if not self.starting_point:
