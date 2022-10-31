@@ -8,7 +8,7 @@ from project.models.trader import Trader, User
 from project.models.strategy import TradingStrategy, CopytradingStrategy
 from project.services.http_client import HTTPClient
 from project.services.bybit import Bybit
-from project.plugins.binance_traders_watch import BinanceTradersWatch
+from project.plugins.binance_trader_watch import BinanceTraderWatch
 from project.plugins.bybit_watch import BybitWatch, BybitCopytradingWatch
 from project.plugins.copy_trade import CopyTrade, CopyCopytrade
 from project.plugins.file_manager import FileManager, TraderFormat
@@ -43,7 +43,7 @@ def make_trader_watch(uid, depo):
 		path = f'db/traders/{uid}.json',
 		formatter = trader_format
 	)
-	watch = BinanceTradersWatch(
+	watch = BinanceTraderWatch(
 		traders_http,
 		trader = dump.load() or Trader(),
 		uid = uid

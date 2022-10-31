@@ -5,7 +5,7 @@ from aiohttp import ClientTimeout, ClientError
 from ..base import Plugin
 from ..models.position import Symbol, Profit, PlacedPosition
 
-class BinanceTradersWatch(Plugin):
+class BinanceTraderWatch(Plugin):
 
 	def __init__(self, http_service, trader, uid):
 		super().__init__(http_service)
@@ -126,7 +126,7 @@ class BinanceTradersWatch(Plugin):
 	def available(self, position, remember):
 		return True
 
-class BinanceTradersSafeWatch(BinanceTradersWatch):
+class BinanceTraderSafeWatch(BinanceTraderWatch):
 
 	def __init__(self, http_service, trader, uid):
 		super().__init__(http_service, trader, uid)
