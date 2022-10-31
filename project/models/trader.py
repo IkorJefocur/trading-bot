@@ -75,8 +75,9 @@ class User(TradingAccount):
 
 	def orders(self, matcher = None):
 		category = self.deal_category(matcher) if matcher else None
-		return order for order in self.opened_orders \
-			if self.deal_category(order) == category
+		for order in self.opened_orders:
+			if self.deal_category(order) == category:
+				yield order
 
 	def has_order(self, order):
 		return order in self.opened_orders
