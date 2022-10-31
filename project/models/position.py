@@ -71,7 +71,7 @@ class Order(Deal):
 		return abs(self.amount)
 
 	def profit(self, current_profit):
-		prices = (self.price, current_price) if self.buy \
+		prices = (self.price, current_price) if self.long \
 			else (current_price, self.price)
 		return Profit.by_diff(*prices, self.amount)
 
