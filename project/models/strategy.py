@@ -60,7 +60,7 @@ class CopytradingStrategy(Strategy):
 		else:
 			profit = {
 				order.profit(full.price).pnl: order \
-					for order in user.opened_orders if order.long == full.long
+					for order in user.orders(full)
 			}
 			orders = [profit[pnl] for pnl in chain(
 				sorted(pnl for pnl in profit if pnl > 0),
