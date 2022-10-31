@@ -73,6 +73,11 @@ class User(TradingAccount):
 		super().__init__(deposit)
 		self.opened_orders = set()
 
+	def orders(self, matcher = None):
+		category = self.deal_category(matcher) if matcher else None
+		return order for order in self.opened_orders \
+			if self.deal_category(order) == category
+
 	def has_order(self, order):
 		return order in self.opened_orders
 
