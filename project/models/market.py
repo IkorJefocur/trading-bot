@@ -49,7 +49,7 @@ class Market:
 			return
 		left = coin.constraint.round(full.amount_diff)
 
-		while left > 0 if full.long else left < 0:
+		while left > 0 if full.long == full.increased else left < 0:
 			amount = coin.constraint.fit(left)
 			yield Order(full.symbol, full.price, amount)
 			left -= amount
