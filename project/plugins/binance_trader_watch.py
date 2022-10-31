@@ -145,7 +145,16 @@ class BinanceTraderSafeWatch(BinanceTraderWatch):
 			if not remember:
 				self.opened_before_start.remove(category)
 			return False
-		available = position.entry.time > self.starting_point
+		available = position.time > self.starting_point
 		if not available and remember:
 			self.opened_before_start.add(category)
 		return available
+
+class BinanceTraderProfitableWatch(BinanceTraderSafeWatch):
+
+	def available(self, position, remember):
+		if position.profit.pnl < 0:
+			category = self.trader.position_category(position)
+			self.opened_before_start.discard(category)
+			return True
+		return super().available(position, remember)
