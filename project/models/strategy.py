@@ -47,7 +47,8 @@ class CopytradingStrategy(Strategy):
 			margin_depo = (self.margin_deposit or user.deposit) \
 				* self.margin_deposit_portion
 			orders_count = max(floor(margin / margin_depo), 1)
-			order_size = margin_depo * self.leverage / full.price / orders_count
+			order_size = margin_depo * self.leverage / full.price / orders_count \
+				* (1 if full.long else -1)
 
 			for index in range(orders_count):
 				with_order = ReflectivePosition.add_order(head, Order(
