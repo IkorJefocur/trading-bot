@@ -46,7 +46,9 @@ class CopytradingStrategy(Strategy):
 			margin = abs(full.amount_diff) * full.price / self.leverage
 			margin_depo = (self.margin_deposit or user.deposit) \
 				* self.margin_deposit_portion
-			orders_count = max(floor(margin / margin_depo), 1)
+			orders_count = floor(margin / margin_depo)
+			if orders_count == 0:
+				return
 			order_size = margin_depo * self.leverage / full.price \
 				* (1 if full.long else -1)
 
@@ -68,8 +70,14 @@ class CopytradingStrategy(Strategy):
 				sorted(pnl for pnl in profit if pnl <= 0)
 			)]
 
-			while abs(head.amount) > abs(full.amount) and len(orders) > 0:
+			if len(orders) == 0:
+				return
+			fix = market.coin(full.symbol).constraint.float_fix
+
+			while len(orders) > 0:
 				order = orders.pop(0)
 				head = ReflectivePosition \
 					.add_order(head, order.compensate(), trader)
+				if fix((head.amount - full.amount) * (1 if full.long else -1)) < 0:
+					break
 				yield head, order
