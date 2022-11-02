@@ -45,13 +45,13 @@ class CopyTrade(Plugin):
 
 	async def set_leverage(self, symbol):
 		if (
-			symbol.value in self.leverage_updates
+			symbol in self.leverage_updates
 			and datetime.now() < \
-				self.leverage_updates[symbol.value] + timedelta(minutes = 1)
+				self.leverage_updates[symbol] + timedelta(minutes = 1)
 		):
 			return
 		await self.set_leverage_request(symbol)
-		self.leverage_updates[symbol.value] = datetime.now()
+		self.leverage_updates[symbol] = datetime.now()
 
 	@Plugin.loop_bound
 	async def set_leverage_request(self, symbol):
@@ -68,7 +68,7 @@ class CopyTrade(Plugin):
 
 	def filter_position(self, position):
 		return not self.allowed_symbols \
-			or position.symbol.value in self.allowed_symbols
+			or position.symbol in self.allowed_symbols
 
 class CopyCopytrade(CopyTrade):
 

@@ -23,7 +23,7 @@ class TradingAccount:
 			self.opened_positions[category] = position
 
 	def deal_category(self, deal):
-		return f"{'LONG' if deal.long else 'SHORT'}-{deal.symbol.value}"
+		return f"{'LONG' if deal.long else 'SHORT'}-{deal.symbol}"
 
 class Trader(TradingAccount):
 

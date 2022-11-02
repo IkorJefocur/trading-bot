@@ -23,6 +23,15 @@ class Symbol:
 			raise ValueError(f'Currency for symbol {value} does not exists')
 		self.coin = value[: value.find(self.currency)]
 
+	def __hash__(self):
+		return hash(self.value)
+
+	def __eq__(self, other):
+		return isinstance(other, Symbol) and self.value == other.value
+
+	def __str__(self):
+		return self.value
+
 	@property
 	def value(self):
 		return f'{self.coin}{self.currency}'

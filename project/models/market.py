@@ -38,10 +38,10 @@ class Market:
 		self.coins = {}
 
 	def coin(self, symbol):
-		return self.coins.get(symbol.value)
+		return self.coins.get(symbol)
 
 	def add_coin(self, coin):
-		self.coins[coin.symbol.value] = coin
+		self.coins[coin.symbol] = coin
 
 	def adjust_position(self, full):
 		coin = self.coin(full.symbol)

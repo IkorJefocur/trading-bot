@@ -3,6 +3,7 @@ from asyncio import new_event_loop
 from itertools import chain
 from json import load
 from dotenv import load_dotenv
+from project.models.position import Symbol
 from project.models.market import Market
 from project.models.trader import Trader, User
 from project.models.strategy import TradingStrategy, CopytradingStrategy
@@ -72,7 +73,7 @@ for uid, trader_config in config.get('traders', {}).items():
 				trader_config['deposit_portion'],
 				trader_config.get('copy_amount_portion')
 			),
-			allowed_symbols = config.get('traders_symbols')
+			allowed_symbols = [Symbol(val) for val in config['traders_symbols']]
 		)
 		copytrade = CopyCopytrade(
 			bybit['service'],
@@ -86,7 +87,7 @@ for uid, trader_config in config.get('traders', {}).items():
 				trader_config['deposit_portion'],
 				trader_config.get('copy_amount_portion')
 			),
-			allowed_symbols = config.get('traders_symbols')
+			allowed_symbols = [Symbol(val) for val in config['traders_symbols']]
 		)
 		watch.events.position_updated += copy.copy_position
 		watch.events.position_updated += copytrade.copy_position
