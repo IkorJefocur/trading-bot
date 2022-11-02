@@ -17,28 +17,39 @@ load_dotenv('.env')
 config = {}
 if path.isfile('config.json'):
 	config = load(open('config.json', 'r'))
+plugins = []
+
+bybit_accounts = {}
+for env in environ:
+	tag = env.replace('BYBIT_KEY_', '', 1)
+	if env.startswith('BYBIT_KEY_') and f'BYBIT_SECRET_{tag}' in environ:
+		service = Bybit(
+			testnet = config.get('bybit_testnet', False),
+			key = environ[env],
+			secret = environ[f'BYBIT_SECRET_{tag}'],
+			http_proxy = config['http_proxies'][len(bybit_accounts)],
+			ws_proxy = config['socks_proxies'][len(bybit_accounts)]
+		)
+		perpetual = BybitWatch(
+			service,
+			market = Market(),
+			user = User(0)
+		)
+		copytrading = BybitCopytradingWatch(
+			service,
+			market = Market(),
+			user = User(0)
+		)
+		bybit_accounts[tag] = {
+			'service': service, 'perpetual': perpetual, 'copytrading': copytrading
+		}
+		plugins += [perpetual, copytrading]
 
 traders_http = HTTPClient(config.get('http_proxies', []))
-bybit = Bybit(
-	testnet = config.get('bybit_testnet', False),
-	key = environ['BYBIT_KEY'],
-	secret = environ['BYBIT_SECRET']
-)
-
 makedirs('db/traders', exist_ok = True)
 trader_format = TraderFormat()
-bybit_watch = BybitWatch(
-	bybit,
-	market = Market(),
-	user = User(0)
-)
-bybit_copytrading_watch = BybitCopytradingWatch(
-	bybit,
-	market = Market(),
-	user = User(0)
-)
 
-def make_trader_watch(uid, trader_config):
+for uid, trader_config in config.get('traders', {}).items():
 	dump = FileManager(
 		path = f'db/traders/{uid}.json',
 		formatter = trader_format
@@ -48,45 +59,47 @@ def make_trader_watch(uid, trader_config):
 		trader = dump.load() or Trader(),
 		uid = uid
 	)
-	copy = CopyTrade(
-		bybit,
-		market = bybit_watch.market,
-		user = bybit_watch.user,
-		trader = watch.trader,
-		trading_strategy = TradingStrategy(
-			config['leverage'],
-			trader_config['deposit_portion'],
-			trader_config.get('copy_amount_portion')
-		),
-		allowed_symbols = config.get('traders_symbols')
-	)
-	copytrade = CopyCopytrade(
-		bybit,
-		market = bybit_copytrading_watch.market,
-		user = bybit_copytrading_watch.user,
-		trader = watch.trader,
-		trading_strategy = CopytradingStrategy(
-			config['leverage'],
-			config.get('per_order_margin', None),
-			config.get('per_order_margin_portion', 1),
-			trader_config['deposit_portion'],
-			trader_config.get('copy_amount_portion')
-		),
-		allowed_symbols = config.get('traders_symbols')
-	)
+	watch.events.trader_fetched += lambda t = watch.trader: dump.save(t)
 
-	watch.events.trader_fetched += lambda: dump.save(watch.trader)
-	watch.events.position_updated += copy.copy_position
-	watch.events.position_updated += copytrade.copy_position
-	return [dump, copy, copytrade, watch]
-traders_logic = [*chain.from_iterable(
-	make_trader_watch(uid, subconfig) for uid, subconfig \
-		in config.get('traders', {}).items()
-)]
+	for bybit in bybit_accounts.values():
+		copy = CopyTrade(
+			bybit['service'],
+			market = bybit['perpetual'].market,
+			user = bybit['perpetual'].user,
+			trader = watch.trader,
+			trading_strategy = TradingStrategy(
+				config['leverage'],
+				trader_config['deposit_portion'],
+				trader_config.get('copy_amount_portion')
+			),
+			allowed_symbols = config.get('traders_symbols')
+		)
+		copytrade = CopyCopytrade(
+			bybit['service'],
+			market = bybit['copytrading'].market,
+			user = bybit['copytrading'].user,
+			trader = watch.trader,
+			trading_strategy = CopytradingStrategy(
+				config['leverage'],
+				config.get('per_order_margin', None),
+				config.get('per_order_margin_portion', 1),
+				trader_config['deposit_portion'],
+				trader_config.get('copy_amount_portion')
+			),
+			allowed_symbols = config.get('traders_symbols')
+		)
+		watch.events.position_updated += copy.copy_position
+		watch.events.position_updated += copytrade.copy_position
+		plugins += [copy, copytrade]
 
-for plugin in [bybit_watch, bybit_copytrading_watch, *traders_logic]:
+	plugins += [dump, watch]
+
+for plugin in plugins:
 	plugin.start_lifecycle()
 print('=== STARTED ===')
-print(f'Perpetual balance: {bybit_watch.user.deposit} USDT')
-print(f'Copytrading balance: {bybit_copytrading_watch.user.deposit} USDT')
+for tag, bybit in bybit_accounts.items():
+	perpetual_depo = bybit['perpetual'].user.deposit
+	copytrading_depo = bybit['copytrading'].user.deposit
+	print(f'Perpetual balance of {tag}: {perpetual_depo} USDT')
+	print(f'Copytrading balance of {tag}: {copytrading_depo} USDT')
 new_event_loop().run_forever()
