@@ -1,23 +1,46 @@
+import re
 from events import Events
 from pybit import usdt_perpetual, _http_manager, _websocket_stream
 from ..base import Service
 
 class Bybit(Service):
 
-	def __init__(self, key, secret, testnet = False):
-		endpoint = 'https://api-testnet.bybit.com' if testnet \
-			else 'https://api.bybit.com'
-		auth = {'api_key': key, 'api_secret': secret}
+	@staticmethod
+	def ws_proxy_params(proxy_str):
+		match = re.match(r"""^
+			(http|socks4|socks4a|socks5|socks5h)://
+			((\w+):(\w+)@)?
+			([\d.]+):(\d+)
+		$""", proxy_str, re.X)
+		return {
+			'proxy_type': match[1],
+			'http_proxy_auth': (match[3], match[4]) if match[2] else None,
+			'http_proxy_host': match[5],
+			'http_proxy_port': match[6]
+		} if match else {}
 
-		super().__init__(HTTP(endpoint = endpoint, **auth))
-		self.ws_public = WebSocketProxy(WebSocket(test = testnet, **auth))
-		self.ws_private = WebSocketProxy(WebSocket(True, test = testnet, **auth))
-		self.usdt_perpetual = usdt_perpetual.HTTP(
-			endpoint = endpoint, **auth
-		)
-		self.usdt_perpetual_ws = WebSocketProxy(usdt_perpetual.WebSocket(
-			test = testnet, **auth
-		))
+	def __init__(
+		self, key, secret, testnet = False,
+		http_proxy = '', ws_proxy = ''
+	):
+		http_params = {
+			'endpoint': 'https://api-testnet.bybit.com' if testnet \
+				else 'https://api.bybit.com',
+			'api_key': key, 'api_secret': secret,
+			'proxies': {'https': http_proxy} if http_proxy else {}
+		}
+		ws_params = {
+			'test': testnet,
+			'api_key': key, 'api_secret': secret,
+			**self.ws_proxy_params(ws_proxy)
+		}
+
+		super().__init__(HTTP(**http_params))
+		self.ws_public = WebSocketProxy(WebSocket(**ws_params))
+		self.ws_private = WebSocketProxy(WebSocket(True, **ws_params))
+		self.usdt_perpetual = usdt_perpetual.HTTP(**http_params)
+		self.usdt_perpetual_ws = \
+			WebSocketProxy(usdt_perpetual.WebSocket(**ws_params))
 
 class HTTP(_http_manager._HTTPManager):
 
