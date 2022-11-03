@@ -60,7 +60,7 @@ for uid, trader_config in config.get('traders', {}).items():
 		trader = dump.load() or Trader(),
 		uid = uid
 	)
-	watch.events.trader_fetched += lambda t = watch.trader: dump.save(t)
+	watch.events.trader_fetched += lambda s = dump.save, t = watch.trader: s(t)
 
 	for bybit in bybit_accounts.values():
 		copy = CopyTrade(
