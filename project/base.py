@@ -1,5 +1,6 @@
 from asyncio import \
-	new_event_loop, set_event_loop, run_coroutine_threadsafe, wrap_future
+	new_event_loop, set_event_loop, \
+	run_coroutine_threadsafe, wrap_future, all_tasks
 from threading import Thread
 
 class Service:
@@ -13,6 +14,7 @@ class Service:
 	def start_lifecycle(self):
 		if not self.thread:
 			self.thread = Thread(target = self.lifecycle)
+			self.thread.daemon = True
 			self.thread.start()
 
 	def lifecycle(self):
@@ -21,6 +23,18 @@ class Service:
 
 	def run(self):
 		self.loop.run_forever()
+
+	def stop_lifecycle(self):
+		if self.thread:
+			self.stop()
+			self.thread.join()
+			self.thread = None
+
+	def stop(self):
+		if self.loop.is_running():
+			for task in all_tasks(self.loop):
+				task.cancel()
+			self.loop.call_soon_threadsafe(self.loop.stop)
 
 	def send_task(self, coro):
 		def propagate_future_exception(future):
@@ -47,3 +61,6 @@ class Plugin:
 
 	def start_lifecycle(self):
 		self.service.start_lifecycle()
+
+	def stop_lifecycle(self):
+		self.service.stop_lifecycle()

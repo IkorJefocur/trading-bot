@@ -1,7 +1,10 @@
+from sys import exit
 from os import environ, path, makedirs
+from signal import signal, SIGINT, SIGTERM
 from asyncio import new_event_loop
 from itertools import chain
 from json import load
+from traceback import print_exc
 from dotenv import load_dotenv
 from project.models.position import Symbol
 from project.models.market import Market
@@ -103,4 +106,14 @@ for tag, bybit in bybit_accounts.items():
 	copytrading_depo = bybit['copytrading'].user.deposit
 	print(f'Perpetual balance of {tag}: {perpetual_depo} USDT')
 	print(f'Copytrading balance of {tag}: {copytrading_depo} USDT')
+
+def soft_exit(*_):
+	for plugin in plugins:
+		try:
+			plugin.stop_lifecycle()
+		except Exception:
+			print_exc()
+	exit(0)
+signal(SIGINT, soft_exit)
+signal(SIGTERM, soft_exit)
 new_event_loop().run_forever()

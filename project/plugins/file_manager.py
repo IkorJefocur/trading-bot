@@ -15,8 +15,9 @@ class FileManager(Plugin):
 		self.format = formatter
 		self.interval = save_interval
 
-	def __del__(self):
+	def stop_lifecycle(self):
 		self.flush()
+		super().stop_lifecycle()
 
 	def save(self, data):
 		self.work_time += 1
