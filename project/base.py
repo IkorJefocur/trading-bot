@@ -4,12 +4,11 @@ from threading import Thread
 
 class Service:
 
-	def __init__(self, target, run = None):
+	def __init__(self, target):
 		self.loop = new_event_loop()
 		self.thread = None
 
 		self.target = target
-		self.run_target = run
 
 	def start_lifecycle(self):
 		if not self.thread:
@@ -21,10 +20,7 @@ class Service:
 		self.run()
 
 	def run(self):
-		if self.run_target:
-			self.run_target(self.target)
-		else:
-			self.loop.run_forever()
+		self.loop.run_forever()
 
 	def send_task(self, coro):
 		def propagate_future_exception(future):
