@@ -73,7 +73,7 @@ class BinanceTraderWatch(Plugin):
 		except asyncexc.TimeoutError:
 			return 5
 
-		to_update = {}
+		received = {}
 		for cur_pos in current:
 			try:
 				symbol = Symbol(cur_pos['symbol'])
@@ -87,31 +87,22 @@ class BinanceTraderWatch(Plugin):
 				continue
 
 			position = PlacedPosition(symbol, price, amount, profit, time)
-			category = self.trader.deal_category(position)
-			to_update[category] = position
+			received[self.trader.deal_category(position)] = position
 
 		for position in self.trader.opened_position():
-			if (
-				self.trader.deal_category(position) not in to_update
-				and self.available(position, False)
-			):
+			if self.trader.deal_category(position) not in received:
 				position = position.close()
 				self.trader.update_position(position)
 				self.events.position_updated(position)
 				self.events.position_closed(position)
 
-		for category, position in to_update.items():
-			if (
-				not self.trader.has_position(position)
-				and self.available(position, True)
-			):
-				position = position.chain(self.trader.opened_position(position))
-				self.trader.update_position(position)
-				event = self.events.position_opened if not position.prev \
-					else self.events.position_increased if position.increased \
-					else self.events.position_decreased
-				self.events.position_updated(position)
-				event(position)
+		for position in self.prepare_available_positions(received.values()):
+			self.trader.update_position(position)
+			event = self.events.position_opened if not position.prev \
+				else self.events.position_increased if position.increased \
+				else self.events.position_decreased
+			self.events.position_updated(position)
+			event(position)
 
 	@Plugin.loop_bound
 	async def trader_related_request(self, url):
@@ -123,8 +114,10 @@ class BinanceTraderWatch(Plugin):
 			timeout = self.http_timeout
 		)).json()
 
-	def available(self, position, remember):
-		return True
+	def prepare_available_positions(self, positions):
+		for position in positions:
+			if not self.trader.has_position(position):
+				yield position.chain(self.trader.opened_position(position))
 
 class BinanceTraderSafeWatch(BinanceTraderWatch):
 
@@ -137,24 +130,32 @@ class BinanceTraderSafeWatch(BinanceTraderWatch):
 		self.starting_point = datetime.now()
 		await super().watch()
 
-	def available(self, position, remember):
+	def prepare_available_positions(self, positions):
 		if not self.starting_point:
-			return True
-		category = self.trader.deal_category(position)
-		if category in self.opened_before_start:
-			if not remember:
+			return
+
+		categories = {self.trader.deal_category(pos) for pos in positions}
+		for category in self.opened_before_start:
+			if category not in categories:
 				self.opened_before_start.remove(category)
-			return False
-		available = position.time > self.starting_point
-		if not available and remember:
-			self.opened_before_start.add(category)
-		return available
+
+		for position in super().prepare_available_positions(positions):
+			category = self.trader.deal_category(position)
+			if (
+				category not in self.opened_before_start
+				and position.time >= self.starting_point
+			):
+				yield position
+			else:
+				self.opened_before_start.add(category)
 
 class BinanceTraderProfitableWatch(BinanceTraderSafeWatch):
 
-	def available(self, position, remember):
-		if position.profit.pnl < 0:
+	def prepare_available_positions(self, positions):
+		yield from super().prepare_available_positions(positions)
+
+		for position in positions:
 			category = self.trader.deal_category(position)
-			self.opened_before_start.discard(category)
-			return True
-		return super().available(position, remember)
+			if category in self.opened_before_start and position.profit.pnl < 0:
+				self.opened_before_start.remove(category)
+				yield position
