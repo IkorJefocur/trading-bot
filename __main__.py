@@ -15,7 +15,7 @@ from project.services.bybit import Bybit
 from project.plugins.binance_trader_watch import BinanceTraderProfitableWatch
 from project.plugins.bybit_watch import BybitWatch, BybitCopytradingWatch
 from project.plugins.copy_trade import CopyTrade, CopyCopytrade
-from project.plugins.file_manager import FileManager, TraderFormat
+from project.plugins.file_manager import FileManager
 
 load_dotenv('.env')
 config = {}
@@ -51,12 +51,10 @@ for env in environ:
 
 traders_http = HTTPClient(config.get('http_proxies', []))
 makedirs('db/traders', exist_ok = True)
-trader_format = TraderFormat()
 
 for uid, trader_config in config.get('traders', {}).items():
 	dump = FileManager(
-		path = f'db/traders/{uid}.json',
-		formatter = trader_format
+		path = f'db/traders/{uid}.json'
 	)
 	watch = BinanceTraderProfitableWatch(
 		traders_http,
