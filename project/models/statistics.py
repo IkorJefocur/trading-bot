@@ -20,6 +20,8 @@ class PositionStats:
 		return self.last_position_val
 	@last_position.setter
 	def last_position(self, value):
+		if value == self.last_position_val:
+			return
 		self.last_position_val = value
 		if not isinstance(value, PlacedPosition):
 			return
@@ -74,8 +76,8 @@ class Performance:
 
 		if day >= self.current_date:
 			self.current_profit_val = value
-		self.current_date = day
-		self.total_records += 1
+			self.current_date = day
+			self.total_records += 1
 
 		if value.deposit < self.min_deposit_profit.deposit:
 			self.min_deposit_profit = value
