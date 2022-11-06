@@ -8,11 +8,13 @@ class Service:
 	def __init__(self, target):
 		self.loop = new_event_loop()
 		self.thread = None
+		self.plugins_count = 0
 
 		self.target = target
 
 	def start_lifecycle(self):
-		if not self.thread:
+		self.plugins_count += 1
+		if self.plugins_count >= 0 and not self.thread:
 			self.thread = Thread(target = self.lifecycle)
 			self.thread.daemon = True
 			self.thread.start()
@@ -25,7 +27,8 @@ class Service:
 		self.loop.run_forever()
 
 	def stop_lifecycle(self):
-		if self.thread:
+		self.plugins_count -= 1
+		if self.plugins_count <= 0 and self.thread:
 			self.stop()
 			self.thread.join()
 			self.thread = None
