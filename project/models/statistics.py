@@ -1,5 +1,5 @@
 from datetime import timedelta, date
-from .position import Profit
+from .position import Profit, PlacedPosition
 
 class PositionStats:
 
@@ -21,8 +21,8 @@ class PositionStats:
 	@last_position.setter
 	def last_position(self, value):
 		self.last_position_val = value
-		if not value:
-			return None
+		if not isinstance(value, PlacedPosition):
+			return
 
 		if value.profit.pnl < self.min_pnl_profit.pnl:
 			self.min_pnl_profit = value.profit
