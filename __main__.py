@@ -15,13 +15,21 @@ from project.services.bybit import Bybit
 from project.plugins.binance_trader_watch import BinanceTraderProfitableWatch
 from project.plugins.bybit_watch import BybitWatch, BybitCopytradingWatch
 from project.plugins.copy_trade import CopyTrade, CopyCopytrade
-from project.plugins.file_manager import FileManager
+from project.plugins.file_dump import FileDump
 
 load_dotenv('.env')
 config = {}
 if path.isfile('config.json'):
 	config = load(open('config.json', 'r'))
 plugins = []
+
+makedirs('db', exist_ok = True)
+file_dump = FileDump(
+	path = 'db/dump.json',
+	readable = config.get('human_readable_dump', False)
+)
+file_dump.load()
+plugins += [file_dump]
 
 bybit_accounts = {}
 for env in environ:
@@ -50,18 +58,16 @@ for env in environ:
 		plugins += [perpetual, copytrading]
 
 traders_http = HTTPClient(config.get('http_proxies', []))
-makedirs('db/traders', exist_ok = True)
 
 for uid, trader_config in config.get('traders', {}).items():
-	dump = FileManager(
-		path = f'db/traders/{uid}.json'
-	)
 	watch = BinanceTraderProfitableWatch(
 		traders_http,
-		trader = dump.load() or Trader(),
+		trader = file_dump.dump.follow(f'trader.{uid}') or Trader(),
 		uid = uid
 	)
-	watch.events.trader_fetched += lambda s = dump.save, t = watch.trader: s(t)
+	file_dump.dump.assoc(f'trader.{uid}', watch.trader)
+	watch.events.trader_fetched += \
+		lambda s = file_dump.save, t = watch.trader: s(t)
 
 	for bybit in bybit_accounts.values():
 		copy = CopyTrade(
@@ -94,7 +100,7 @@ for uid, trader_config in config.get('traders', {}).items():
 		watch.events.position_updated += copytrade.copy_position
 		plugins += [copy, copytrade]
 
-	plugins += [dump, watch]
+	plugins += [watch]
 
 for plugin in plugins:
 	plugin.start_lifecycle()
