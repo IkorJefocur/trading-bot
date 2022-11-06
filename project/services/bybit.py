@@ -20,7 +20,7 @@ class Bybit(Service):
 		} if match else {}
 
 	def __init__(
-		self, key, secret, testnet = False,
+		self, key = None, secret = None, testnet = False,
 		http_proxy = '', ws_proxy = ''
 	):
 		http_params = {
