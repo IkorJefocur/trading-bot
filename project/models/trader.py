@@ -55,7 +55,7 @@ class Trader(TradingAccount):
 	def valuable_performance(self):
 		return next(
 			(perf for perf in self.performance() if perf.total_records > 0),
-			[*self.performance()][0]
+			next(self.performance())
 		)
 
 	def position_stats(self, position = None):
