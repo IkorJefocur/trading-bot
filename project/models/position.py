@@ -100,6 +100,9 @@ class Position(Deal):
 		super().__init__(symbol, price, amount)
 		self.prev = None
 
+	def __hash__(self):
+		return hash((self.symbol, self.price, self.amount))
+
 	def __eq__(self, other):
 		return (
 			isinstance(other, Position)
@@ -145,6 +148,9 @@ class PlacedPosition(Position):
 		super().__init__(symbol, price, amount)
 		self.profit = profit
 		self.time = time or datetime.now()
+
+	def __hash__(self):
+		return hash(self.time)
 
 	def __eq__(self, other):
 		return self.time == other.time if isinstance(other, PlacedPosition) \

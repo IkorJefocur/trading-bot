@@ -1,8 +1,9 @@
 from weakref import WeakKeyDictionary, WeakValueDictionary
-from datetime import date
+from datetime import date, datetime
 from itertools import chain
 from inspect import getmro
-from .position import Profit
+from .position import \
+	Symbol, Profit, Position, PlacedPosition, ReflectivePosition
 from .statistics import PositionStats, Performance
 from .trader import Trader
 
@@ -10,7 +11,13 @@ class Dump:
 
 	def __init__(self, formats = None, data = {}, links = {}):
 		if not formats:
-			formats = [ProfitFormat(), TraderFormat()]
+			formats = [
+				ProfitFormat(),
+				PositionFormat(),
+				PlacedPositionFormat(),
+				ReflectivePositionFormat(),
+				TraderFormat()
+			]
 		self.cls_formats = {formatter.cls: formatter for formatter in formats}
 		self.name_formats = {formatter.name: formatter for formatter in formats}
 		if len(formats) > len(self.name_formats):
@@ -157,6 +164,68 @@ class ProfitFormat(Format):
 	def obj(self, profit):
 		return Profit(profit['roe'], profit['pnl'])
 
+class PositionFormat(Format):
+
+	cls = Position
+	name = 'Position'
+
+	def raw(self, position):
+		return {
+			'symbol': position.symbol.value,
+			'price': position.price,
+			'amount': position.amount
+		}
+
+	def obj(self, position):
+		return Position(
+			Symbol(position['symbol']),
+			position['price'],
+			position['amount']
+		)
+
+class PlacedPositionFormat(PositionFormat):
+
+	cls = PlacedPosition
+	name = 'PlacedPosition'
+
+	def raw(self, position):
+		return {
+			**super().raw(position),
+			'profit': position.profit,
+			'time': position.time.timestamp()
+		}
+
+	def obj(self, position):
+		return PlacedPosition(
+			Symbol(position['symbol']),
+			position['price'],
+			position['amount'],
+			position['profit'],
+			datetime.fromtimestamp(position['time'])
+		)
+
+class ReflectivePositionFormat(PositionFormat):
+
+	cls = ReflectivePosition
+	name = 'ReflectivePosition'
+
+	def raw(self, position):
+		return {
+			'symbol': position.symbol.value,
+			'price': position.price,
+			'parts': [{
+				'key': key,
+				'amount': amount
+			} for key, amount in position.parts_chain]
+		}
+
+	def obj(self, position):
+		return ReflectivePosition(
+			Symbol(position['symbol']),
+			position['price'],
+			[{part['key']: part['amount']} for part in position['parts']]
+		)
+
 class TraderFormat(Format):
 
 	cls = Trader
@@ -164,6 +233,8 @@ class TraderFormat(Format):
 
 	def raw(self, trader):
 		return {
+			'positions': trader.opened_position(),
+
 			'performance': {
 				perf.period: {
 					'date': perf.current_date.isocalendar(),
@@ -175,8 +246,9 @@ class TraderFormat(Format):
 				} for perf in trader.performance()
 			},
 
-			'positions': {
+			'positions_stats': {
 				category: {
+					'position': pos.last_position,
 					'min_pnl': pos.min_pnl_profit,
 					'max_pnl': pos.max_pnl_profit,
 					'min_roe': pos.min_roe_profit,
@@ -187,13 +259,15 @@ class TraderFormat(Format):
 
 	def obj(self, trader):
 		return Trader(
+			trader['positions'],
+
 			[Performance(
 				period, date.fromisocalendar(*perf['date']), perf['total'],
 				perf['current'], perf['min'], perf['max'], perf['average']
 			) for period, perf in trader['performance'].items()],
 
 			{category: PositionStats(
-				None,
+				pos['position'],
 				pos['min_pnl'], pos['max_pnl'], pos['min_roe'], pos['max_roe']
-			) for category, pos in trader['positions'].items()}
+			) for category, pos in trader['positions_stats'].items()}
 		)

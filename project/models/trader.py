@@ -2,9 +2,11 @@ from .statistics import PositionStats, Performance
 
 class TradingAccount:
 
-	def __init__(self, deposit):
+	def __init__(self, deposit, positions = []):
 		self.deposit = deposit
 		self.opened_positions = {}
+		for position in positions:
+			self.update_position(position)
 
 	def opened_position(self, matcher = None):
 		if not matcher:
@@ -27,15 +29,15 @@ class TradingAccount:
 
 class Trader(TradingAccount):
 
-	def __init__(self, performance = [], positions = {}):
-		super().__init__(0)
+	def __init__(self, positions = [], performance = [], positions_stats = {}):
 		self.all_periods_performance = {
 			**{period: Performance(period) for period in Performance.periods},
 			**{perf.period: perf for perf in performance}
 		}
 		self.positions_stats = {
-			category: stats for category, stats in positions.items()
+			category: stats for category, stats in positions_stats.items()
 		}
+		super().__init__(0, positions)
 
 	@property
 	def deposit(self):
@@ -68,9 +70,9 @@ class Trader(TradingAccount):
 
 class User(TradingAccount):
 
-	def __init__(self, deposit):
-		super().__init__(deposit)
+	def __init__(self, deposit, positions = []):
 		self.opened_orders = set()
+		super().__init__(deposit, positions)
 
 	def orders(self, matcher = None):
 		category = self.deal_category(matcher) if matcher else None
