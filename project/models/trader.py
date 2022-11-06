@@ -43,10 +43,9 @@ class Trader(TradingAccount):
 	@deposit.setter
 	def deposit(self, value): pass
 
-	def add_position(self, position):
-		position = super().add_position(position)
+	def update_position(self, position):
+		super().update_position(position)
 		self.position_stats(position).last_position = position
-		return position
 
 	def performance(self, period = None):
 		return self.all_periods_performance[period] if period \
