@@ -72,10 +72,10 @@ class Performance:
 		return self.current_profit_val
 	@current_profit.setter
 	def current_profit(self, value):
+		self.current_profit_val = value
 		day = date.today()
 
 		if day >= self.current_date:
-			self.current_profit_val = value
 			self.current_date = day
 			self.total_records += 1
 
