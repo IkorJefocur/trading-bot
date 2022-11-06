@@ -1,5 +1,5 @@
 from datetime import timedelta, datetime
-from json import dump, load
+from json import dumps, loads
 from ..base import Plugin
 from ..models.dump import Dump
 
@@ -33,7 +33,7 @@ class FileDump(Plugin):
 
 		try:
 			with open(self.path, 'r') as file:
-				content = load(file)
+				content = loads(file.read())
 				self.dump.data = content['data']
 				self.dump.links = content['links']
 		except FileNotFoundError:
@@ -47,8 +47,9 @@ class FileDump(Plugin):
 
 		while len(self.buffer) > 0:
 			self.dump.save(self.buffer.pop())
+		data = dumps({
+			'data': self.dump.data,
+			'links': self.dump.links
+		}, indent = '\t' if self.readable else None)
 		with open(self.path, 'w') as file:
-			dump({
-				'data': self.dump.data,
-				'links': self.dump.links
-			}, file, indent = '\t' if self.readable else None)
+			file.write(data)
