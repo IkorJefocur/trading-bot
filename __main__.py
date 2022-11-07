@@ -32,6 +32,8 @@ http = HTTPClient(config.get('http_proxies', []))
 
 traders_watch = {}
 bybit_accounts = {}
+allowed_symbols = [Symbol(val) for val in config['traders_symbols']] \
+	if 'traders_symbols' in config else None
 
 for tag, account in config['accounts'].items():
 	bybit = Bybit(
@@ -65,7 +67,7 @@ for tag, account in config['accounts'].items():
 				trader['deposit_portion'],
 				trader.get('copy_amount_portion')
 			),
-			allowed_symbols = [Symbol(val) for val in config['traders_symbols']]
+			allowed_symbols = allowed_symbols
 		)
 		copytrade = CopyCopytrade(
 			bybit,
@@ -79,7 +81,7 @@ for tag, account in config['accounts'].items():
 				trader['deposit_portion'],
 				trader.get('copy_amount_portion')
 			),
-			allowed_symbols = [Symbol(val) for val in config['traders_symbols']]
+			allowed_symbols = allowed_symbols
 		)
 		watch.events.position_updated += copy.copy_position
 		watch.events.position_updated += copytrade.copy_position
