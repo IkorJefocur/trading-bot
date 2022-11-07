@@ -74,7 +74,7 @@ for uid, trader_config in config.get('traders', {}).items():
 			user = bybit['perpetual'].user,
 			trader = watch.trader,
 			trading_strategy = TradingStrategy(
-				config['leverage'],
+				config.get('leverage'),
 				trader_config['deposit_portion'],
 				trader_config.get('copy_amount_portion')
 			),
@@ -86,7 +86,7 @@ for uid, trader_config in config.get('traders', {}).items():
 			user = bybit['copytrading'].user,
 			trader = watch.trader,
 			trading_strategy = CopytradingStrategy(
-				config['leverage'],
+				config.get('leverage'),
 				config.get('per_order_margin', None),
 				config.get('per_order_margin_portion', 1),
 				trader_config['deposit_portion'],

@@ -10,7 +10,6 @@ class CopyTrade(Plugin):
 		allowed_symbols = None
 	):
 		super().__init__(bybit_service)
-		self.leverage_updates = {}
 
 		self.strategy = trading_strategy
 		self.market = market
@@ -29,7 +28,7 @@ class CopyTrade(Plugin):
 		)
 
 		for position in positions:
-			await self.set_leverage(position.symbol)
+			await self.set_leverage(position.symbol, position.leverage)
 			constraint = self.market.coin(position.symbol).constraint
 
 			self.service.usdt_perpetual.place_active_order(
@@ -43,24 +42,14 @@ class CopyTrade(Plugin):
 			)
 			self.user.update_position(position)
 
-	async def set_leverage(self, symbol):
-		if (
-			symbol in self.leverage_updates
-			and datetime.now() < \
-				self.leverage_updates[symbol] + timedelta(minutes = 1)
-		):
-			return
-		await self.set_leverage_request(symbol)
-		self.leverage_updates[symbol] = datetime.now()
-
 	@Plugin.loop_bound
-	async def set_leverage_request(self, symbol):
+	async def set_leverage(self, symbol, leverage):
 		not_modified_code = 34036
 		try:
 			self.service.usdt_perpetual.set_leverage(
 				symbol = symbol.value,
-				buy_leverage = self.strategy.leverage,
-				sell_leverage = self.strategy.leverage
+				buy_leverage = leverage,
+				sell_leverage = leverage
 			)
 		except InvalidRequestError as error:
 			if error.status_code != not_modified_code:
@@ -81,7 +70,7 @@ class CopyCopytrade(CopyTrade):
 		)
 
 		for position, order_to_close in positions:
-			await self.set_leverage(position.symbol)
+			await self.set_leverage(position.symbol, position.leverage)
 			constraint = self.market.coin(position.symbol).constraint
 
 			if order_to_close:
@@ -106,14 +95,14 @@ class CopyCopytrade(CopyTrade):
 				self.user.update_position(position)
 
 	@Plugin.loop_bound
-	async def set_leverage_request(self, symbol):
+	async def set_leverage(self, symbol, leverage):
 		not_modified_code = 34036
 		try:
 			self.service.target.post(
 				'/contract/v3/private/copytrading/position/set-leverage',
 				symbol = symbol.value,
-				buy_leverage = str(self.strategy.leverage),
-				sell_leverage = str(self.strategy.leverage)
+				buy_leverage = str(leverage),
+				sell_leverage = str(leverage)
 			)
 		except InvalidRequestError as error:
 			if error.status_code != not_modified_code:

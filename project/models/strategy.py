@@ -4,7 +4,10 @@ from .position import Order, ReflectivePosition
 
 class Strategy:
 
-	def __init__(self, leverage, depo_portion = 1, amount_portion = None):
+	def __init__(
+		self, leverage = None,
+		depo_portion = 1, amount_portion = None
+	):
 		self.leverage = leverage
 		self.deposit_portion = depo_portion
 		self.copy_amount_portion = amount_portion
@@ -16,7 +19,8 @@ class Strategy:
 				else 0
 		)
 		return ReflectivePosition(
-			base.symbol, base.price, {trader: amount}, base.leverage
+			base.symbol, base.price, {trader: amount},
+			self.leverage or base.leverage
 		)
 
 class TradingStrategy(Strategy):
@@ -32,7 +36,7 @@ class TradingStrategy(Strategy):
 class CopytradingStrategy(Strategy):
 
 	def __init__(
-		self, leverage,
+		self, leverage = None,
 		margin_depo = None, margin_depo_portion = 1,
 		depo_portion = 1, amount_portion = None
 	):
@@ -45,13 +49,11 @@ class CopytradingStrategy(Strategy):
 		full = self.deposit_relative_reflection(base, trader, user).chain(head)
 
 		if full.increased:
-			margin = abs(full.amount_diff) * full.price / self.leverage
+			margin = abs(full.generate_order().total_price / full.leverage)
 			margin_depo = (self.margin_deposit or user.deposit) \
 				* self.margin_deposit_portion
-			orders_count = floor(margin / margin_depo)
-			if orders_count == 0:
-				return
-			order_size = margin_depo * self.leverage / full.price \
+			orders_count = floor(abs(margin / margin_depo))
+			order_size = margin_depo * full.leverage / full.price \
 				* (1 if full.long else -1)
 
 			for index in range(orders_count):
