@@ -2,7 +2,6 @@ from sys import exit
 from os import environ, path, makedirs
 from signal import signal, SIGINT, SIGTERM
 from asyncio import new_event_loop
-from itertools import chain
 from json import load
 from traceback import print_exc
 from dotenv import load_dotenv
@@ -32,73 +31,73 @@ file_dump = FileDump(
 file_dump.load()
 plugins += [file_dump]
 
-bybit = Bybit(testnet = config.get('bybit_testnet', False))
-perpetual_market = MarketSync(bybit, market = Market())
-copytrading_market = CopytradingMarketSync(bybit, market = Market())
+public_bybit = Bybit(testnet = config.get('bybit_testnet', False))
+perpetual_market = MarketSync(public_bybit, market = Market())
+copytrading_market = CopytradingMarketSync(public_bybit, market = Market())
 plugins += [perpetual_market, copytrading_market]
 
+http = HTTPClient(config.get('http_proxies', []))
+
+traders_watch = {}
 bybit_accounts = {}
-for env in environ:
-	tag = env.replace('BYBIT_KEY_', '', 1)
-	if env.startswith('BYBIT_KEY_') and f'BYBIT_SECRET_{tag}' in environ:
-		service = Bybit(
-			testnet = config.get('bybit_testnet', False),
-			key = environ[env],
-			secret = environ[f'BYBIT_SECRET_{tag}'],
-			http_proxy = config['http_proxies'][len(bybit_accounts)],
-			ws_proxy = config['socks_proxies'][len(bybit_accounts)]
-		)
-		perpetual = UserSync(service, user = User(0))
-		copytrading = CopytradingUserSync(service, user = User(0))
-		bybit_accounts[tag] = {
-			'service': service, 'perpetual': perpetual, 'copytrading': copytrading
-		}
-		plugins += [perpetual, copytrading]
 
-traders_http = HTTPClient(config.get('http_proxies', []))
-
-for uid, trader_config in config.get('traders', {}).items():
-	watch = BinanceTraderProfitableWatch(
-		traders_http,
-		trader = file_dump.dump.follow(f'trader.{uid}') or Trader(),
-		uid = uid
+for tag, account in config['accounts'].items():
+	bybit = Bybit(
+		testnet = account.get('testnet', False),
+		key = environ[f'BYBIT_KEY_{tag}'],
+		secret = environ[f'BYBIT_SECRET_{tag}'],
+		http_proxy = config['http_proxies'][len(bybit_accounts)],
+		ws_proxy = config['socks_proxies'][len(bybit_accounts)]
 	)
-	file_dump.dump.assoc(f'trader.{uid}', watch.trader)
-	watch.events.trader_fetched += \
-		lambda s = file_dump.save, t = watch.trader: s(t)
+	perpetual = UserSync(bybit, user = User(0))
+	copytrading = CopytradingUserSync(bybit, user = User(0))
+	bybit_accounts[tag] = {'perpetual': perpetual, 'copytrading': copytrading}
+	plugins += [perpetual, copytrading]
 
-	for bybit in bybit_accounts.values():
+	for uid, trader in account['traders'].items():
+		if uid not in traders_watch:
+			watch = BinanceTraderProfitableWatch(
+				http,
+				trader = file_dump.dump.follow(f'trader.{uid}') or Trader(),
+				uid = uid
+			)
+			file_dump.dump.assoc(f'trader.{uid}', watch.trader)
+			watch.events.trader_fetched += \
+				lambda s = file_dump.save, t = watch.trader: s(t)
+			traders_watch[uid] = watch
+		watch = traders_watch[uid]
+
 		copy = CopyTrade(
-			bybit['service'],
+			bybit,
 			market = perpetual_market.market,
-			user = bybit['perpetual'].user,
+			user = perpetual.user,
 			trader = watch.trader,
 			trading_strategy = TradingStrategy(
-				config.get('leverage'),
-				trader_config['deposit_portion'],
-				trader_config.get('copy_amount_portion')
+				account.get('leverage'),
+				trader['deposit_portion'],
+				trader.get('copy_amount_portion')
 			),
 			allowed_symbols = [Symbol(val) for val in config['traders_symbols']]
 		)
 		copytrade = CopyCopytrade(
-			bybit['service'],
+			bybit,
 			market = copytrading_market.market,
-			user = bybit['copytrading'].user,
+			user = copytrading.user,
 			trader = watch.trader,
 			trading_strategy = CopytradingStrategy(
-				config.get('leverage'),
-				config.get('per_order_margin', None),
-				config.get('per_order_margin_portion', 1),
-				trader_config['deposit_portion'],
-				trader_config.get('copy_amount_portion')
+				account.get('leverage'),
+				account.get('per_order_margin', None),
+				account.get('per_order_margin_portion', 1),
+				trader['deposit_portion'],
+				trader.get('copy_amount_portion')
 			),
 			allowed_symbols = [Symbol(val) for val in config['traders_symbols']]
 		)
 		watch.events.position_updated += copy.copy_position
 		watch.events.position_updated += copytrade.copy_position
-		plugins += [copy, copytrade]
 
-	plugins += [watch]
+		plugins += [copy, copytrade]
+plugins += [*traders_watch.values()]
 
 for plugin in plugins:
 	plugin.start_lifecycle()
