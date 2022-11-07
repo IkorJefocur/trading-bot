@@ -35,6 +35,7 @@ plugins += [file_dump]
 bybit = Bybit(testnet = config.get('bybit_testnet', False))
 perpetual_market = MarketSync(bybit, market = Market())
 copytrading_market = CopytradingMarketSync(bybit, market = Market())
+plugins += [perpetual_market, copytrading_market]
 
 bybit_accounts = {}
 for env in environ:
@@ -73,6 +74,7 @@ for uid, trader_config in config.get('traders', {}).items():
 			user = bybit['perpetual'].user,
 			trader = watch.trader,
 			trading_strategy = TradingStrategy(
+				config['leverage'],
 				trader_config['deposit_portion'],
 				trader_config.get('copy_amount_portion')
 			),
@@ -84,6 +86,7 @@ for uid, trader_config in config.get('traders', {}).items():
 			user = bybit['copytrading'].user,
 			trader = watch.trader,
 			trading_strategy = CopytradingStrategy(
+				config['leverage'],
 				config.get('per_order_margin', None),
 				config.get('per_order_margin_portion', 1),
 				trader_config['deposit_portion'],
