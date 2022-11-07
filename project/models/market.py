@@ -51,5 +51,5 @@ class Market:
 
 		while left > 0 if full.long == full.increased else left < 0:
 			amount = coin.constraint.fit(left)
-			yield Order(full.symbol, full.price, amount)
+			yield Order(full.symbol, full.price, amount, full.leverage)
 			left -= amount

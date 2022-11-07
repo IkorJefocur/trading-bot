@@ -15,7 +15,9 @@ class Strategy:
 				else user.deposit / trader.deposit if trader.deposit > 0 \
 				else 0
 		)
-		return ReflectivePosition(base.symbol, base.price, {trader: amount})
+		return ReflectivePosition(
+			base.symbol, base.price, {trader: amount}, base.leverage
+		)
 
 class TradingStrategy(Strategy):
 
@@ -54,7 +56,7 @@ class CopytradingStrategy(Strategy):
 
 			for index in range(orders_count):
 				with_order = ReflectivePosition.add_order(head, Order(
-					full.symbol, full.price, order_size
+					full.symbol, full.price, order_size, full.leverage
 				), trader)
 				for order in market.adjust_position(with_order):
 					head = ReflectivePosition.add_order(head, order, trader)

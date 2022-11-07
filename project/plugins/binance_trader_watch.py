@@ -82,11 +82,14 @@ class BinanceTraderWatch(Plugin):
 				price = float(cur_pos['markPrice'])
 				amount = float(cur_pos['amount'])
 				profit = Profit(float(cur_pos['roe']), float(cur_pos['pnl']))
+				leverage = int(cur_pos['leverage'])
 
 			except (LookupError, ValueError, TypeError):
 				continue
 
-			position = PlacedPosition(symbol, price, amount, profit, time)
+			position = PlacedPosition(
+				symbol, price, amount, profit, time, leverage
+			)
 			received[self.trader.deal_category(position)] = position
 
 		for position in self.trader.opened_position():

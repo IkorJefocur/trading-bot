@@ -56,10 +56,11 @@ class Profit:
 
 class Deal:
 
-	def __init__(self, symbol, price, amount):
+	def __init__(self, symbol, price, amount, leverage = 1):
 		self.symbol = symbol
 		self.price = price
 		self.amount = amount
+		self.leverage = leverage
 
 	@property
 	def total_price(self):
@@ -73,6 +74,10 @@ class Deal:
 	def long(self):
 		return self.amount > 0
 
+	@property
+	def margin(self):
+		return self.total_price / self.leverage
+
 class Order(Deal):
 
 	@property
@@ -85,7 +90,7 @@ class Order(Deal):
 		return Profit.by_diff(*prices, self.amount)
 
 	def compensate(self):
-		return Order(self.symbol, self.price, -self.amount)
+		return Order(self.symbol, self.price, -self.amount, self.leverage)
 
 class Position(Deal):
 
@@ -93,11 +98,12 @@ class Position(Deal):
 	def add_order(position, order):
 		return Position(
 			order.symbol, order.price,
-			(position.amount if position else 0) + order.amount
+			(position.amount if position else 0) + order.amount,
+			order.leverage
 		).chain(position)
 
-	def __init__(self, symbol, price, amount):
-		super().__init__(symbol, price, amount)
+	def __init__(self, symbol, price, amount, leverage = 1):
+		super().__init__(symbol, price, amount, leverage)
 		self.prev = None
 
 	def __hash__(self):
@@ -136,16 +142,16 @@ class Position(Deal):
 
 	def close(self):
 		return Position(
-			self.symbol, self.price, 0
+			self.symbol, self.price, 0, self.leverage
 		).chain(self)
 
 	def generate_order(self):
-		return Order(self.symbol, self.price, self.amount_diff)
+		return Order(self.symbol, self.price, self.amount_diff, self.leverage)
 
 class PlacedPosition(Position):
 
-	def __init__(self, symbol, price, amount, profit, time = None):
-		super().__init__(symbol, price, amount)
+	def __init__(self, symbol, price, amount, profit, time = None, leverage = 1):
+		super().__init__(symbol, price, amount, leverage)
 		self.profit = profit
 		self.time = time or datetime.now()
 
@@ -166,11 +172,11 @@ class ReflectivePosition(Position):
 			else {None: pos_amount, key: order.amount} if key != None \
 			else {None: pos_amount + order.amount}
 		return ReflectivePosition(
-			order.symbol, order.price, parts
+			order.symbol, order.price, parts, order.leverage
 		).chain(position)
 
-	def __init__(self, symbol, price, parts):
-		super().__init__(symbol, price, 0)
+	def __init__(self, symbol, price, parts, leverage = 1):
+		super().__init__(symbol, price, 0, leverage)
 		self.parts = parts
 
 	@property
