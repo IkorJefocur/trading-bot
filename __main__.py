@@ -23,14 +23,6 @@ if path.isfile('config.json'):
 	config = load(open('config.json', 'r'))
 plugins = []
 
-makedirs('db', exist_ok = True)
-file_dump = FileDump(
-	path = 'db/dump.json',
-	readable = config.get('human_readable_dump', False)
-)
-file_dump.load()
-plugins += [file_dump]
-
 public_bybit = Bybit(testnet = config.get('bybit_testnet', False))
 perpetual_market = MarketSync(public_bybit, market = Market())
 copytrading_market = CopytradingMarketSync(public_bybit, market = Market())
@@ -56,15 +48,11 @@ for tag, account in config['accounts'].items():
 
 	for uid, trader in account['traders'].items():
 		if uid not in traders_watch:
-			watch = BinanceTraderProfitableWatch(
+			traders_watch[uid] = BinanceTraderProfitableWatch(
 				http,
-				trader = file_dump.dump.follow(f'trader.{uid}') or Trader(),
+				trader = Trader(),
 				uid = uid
 			)
-			file_dump.dump.assoc(f'trader.{uid}', watch.trader)
-			watch.events.trader_fetched += \
-				lambda s = file_dump.save, t = watch.trader: s(t)
-			traders_watch[uid] = watch
 		watch = traders_watch[uid]
 
 		copy = CopyTrade(
