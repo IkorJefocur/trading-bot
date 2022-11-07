@@ -49,7 +49,7 @@ class CopytradingStrategy(Strategy):
 		full = self.deposit_relative_reflection(base, trader, user).chain(head)
 
 		if full.increased:
-			margin = abs(full.generate_order().total_price / full.leverage)
+			margin = abs(full.generate_order().margin)
 			margin_depo = (self.margin_deposit or user.deposit) \
 				* self.margin_deposit_portion
 			orders_count = floor(abs(margin / margin_depo))
