@@ -13,7 +13,8 @@ from project.models.strategy import TradingStrategy, CopytradingStrategy
 from project.services.http_client import HTTPClient
 from project.services.bybit import Bybit
 from project.plugins.binance_trader_watch import BinanceTraderProfitableWatch
-from project.plugins.bybit_watch import BybitWatch, BybitCopytradingWatch
+from project.plugins.user_sync import UserSync, CopytradingUserSync
+from project.plugins.market_sync import MarketSync, CopytradingMarketSync
 from project.plugins.copy_trade import CopyTrade, CopyCopytrade
 from project.plugins.file_dump import FileDump
 
@@ -31,6 +32,10 @@ file_dump = FileDump(
 file_dump.load()
 plugins += [file_dump]
 
+bybit = Bybit(testnet = config.get('bybit_testnet', False))
+perpetual_market = MarketSync(bybit, market = Market())
+copytrading_market = CopytradingMarketSync(bybit, market = Market())
+
 bybit_accounts = {}
 for env in environ:
 	tag = env.replace('BYBIT_KEY_', '', 1)
@@ -42,16 +47,8 @@ for env in environ:
 			http_proxy = config['http_proxies'][len(bybit_accounts)],
 			ws_proxy = config['socks_proxies'][len(bybit_accounts)]
 		)
-		perpetual = BybitWatch(
-			service,
-			market = Market(),
-			user = User(0)
-		)
-		copytrading = BybitCopytradingWatch(
-			service,
-			market = Market(),
-			user = User(0)
-		)
+		perpetual = UserSync(service, user = User(0))
+		copytrading = CopytradingUserSync(service, user = User(0))
 		bybit_accounts[tag] = {
 			'service': service, 'perpetual': perpetual, 'copytrading': copytrading
 		}
@@ -72,7 +69,7 @@ for uid, trader_config in config.get('traders', {}).items():
 	for bybit in bybit_accounts.values():
 		copy = CopyTrade(
 			bybit['service'],
-			market = bybit['perpetual'].market,
+			market = perpetual_market.market,
 			user = bybit['perpetual'].user,
 			trader = watch.trader,
 			trading_strategy = TradingStrategy(
@@ -84,7 +81,7 @@ for uid, trader_config in config.get('traders', {}).items():
 		)
 		copytrade = CopyCopytrade(
 			bybit['service'],
-			market = bybit['copytrading'].market,
+			market = copytrading_market.market,
 			user = bybit['copytrading'].user,
 			trader = watch.trader,
 			trading_strategy = CopytradingStrategy(
