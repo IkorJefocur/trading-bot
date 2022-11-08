@@ -19,6 +19,7 @@ class CopyTrade(Plugin):
 
 	async def copy_position(self, base):
 		if self.filter_position(base):
+			await self.set_leverage(base.symbol, base.leverage)
 			await self.copy_position_strategy(base)
 
 	@Plugin.loop_bound
@@ -28,7 +29,6 @@ class CopyTrade(Plugin):
 		)
 
 		for position in positions:
-			await self.set_leverage(position.symbol, position.leverage)
 			constraint = self.market.coin(position.symbol).constraint
 
 			self.service.usdt_perpetual.place_active_order(
@@ -70,7 +70,6 @@ class CopyCopytrade(CopyTrade):
 		)
 
 		for position, order_to_close in positions:
-			await self.set_leverage(position.symbol, position.leverage)
 			constraint = self.market.coin(position.symbol).constraint
 
 			if order_to_close:
