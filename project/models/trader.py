@@ -93,5 +93,5 @@ class User(TradingAccount):
 		super().update_position(position)
 		if with_order:
 			order = position.generate_order()
-			self.add_order(order)
+			self.place_order(order)
 			return order
