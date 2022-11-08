@@ -49,7 +49,7 @@ class CopytradingStrategy(Strategy):
 		full = self.deposit_relative_reflection(base, trader, user).chain(head)
 
 		if full.increased:
-			margin = abs(full.generate_order().total_price / full.leverage)
+			margin = abs(full.generate_order().margin)
 			margin_depo = (self.margin_deposit or user.deposit) \
 				* self.margin_deposit_portion
 			orders_count = floor(abs(margin / margin_depo))
@@ -65,14 +65,16 @@ class CopytradingStrategy(Strategy):
 					yield head, None
 
 		else:
-			profit = {
-				order.profit(full.price).pnl: order \
+			profit = [
+				(order.profit(full.price).pnl, order) \
 					for order in user.orders(full)
-			}
-			orders = [profit[pnl] for pnl in chain(
-				sorted(pnl for pnl in profit if pnl > 0),
-				sorted(pnl for pnl in profit if pnl <= 0)
-			)]
+			]
+			sort = lambda profit: \
+				(order for _, order in sorted(profit, key = lambda pair: pair[0]))
+			orders = [
+				*sort((pnl, order) for pnl, order in profit if pnl > 0),
+				*sort((pnl, order) for pnl, order in profit if pnl <= 0)
+			]
 
 			if len(orders) == 0:
 				return
