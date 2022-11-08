@@ -65,14 +65,16 @@ class CopytradingStrategy(Strategy):
 					yield head, None
 
 		else:
-			profit = {
-				order.profit(full.price).pnl: order \
+			profit = [
+				(order.profit(full.price).pnl, order) \
 					for order in user.orders(full)
-			}
-			orders = [profit[pnl] for pnl in chain(
-				sorted(pnl for pnl in profit if pnl > 0),
-				sorted(pnl for pnl in profit if pnl <= 0)
-			)]
+			]
+			sort = lambda profit: \
+				(order for _, order in sorted(profit, key = lambda pair: pair[0]))
+			orders = [
+				*sort((pnl, order) for pnl, order in profit if pnl > 0),
+				*sort((pnl, order) for pnl, order in profit if pnl <= 0)
+			]
 
 			if len(orders) == 0:
 				return
