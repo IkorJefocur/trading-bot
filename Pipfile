@@ -12,6 +12,7 @@ events = {git = "https://github.com/IkorJefocur/python-events"}
 aiohttp = "*"
 pybit = {git = "https://github.com/IkorJefocur/pybit"}
 websocket-client = {extras = ["optional"], version = "*"}
+aiohttp-socks = "*"
 
 [dev-packages]
 

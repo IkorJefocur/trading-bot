@@ -1,19 +1,30 @@
+from asyncio import gather
 from random import randint
 from aiohttp import ClientSession
+from aiohttp_socks import ProxyConnector
 from ..base import Service
 
 class HTTPClient(Service):
 
 	def __init__(self, proxies = []):
 		super().__init__(None)
-		self.proxies = proxies
+		self.proxies = [proxy for proxy in proxies if proxy.startswith('http')]
+		self.proxy_sessions = []
+
+	@property
+	def target(self):
+		return self.proxy_sessions[randint(0, len(self.proxies) - 1)] \
+			if len(self.proxy_sessions) > 0 \
+			else self.session
+	@target.setter
+	def target(self, value): pass
 
 	def run(self):
 		self.loop.run_until_complete(self.update_session())
 		super().run()
 
 	def stop(self):
-		self.run_task_sync(self.target.close())
+		self.run_task_sync(self.close_session())
 		super().stop()
 
 	def get_proxy(self):
@@ -21,4 +32,14 @@ class HTTPClient(Service):
 			if len(self.proxies) > 0 else None
 
 	async def update_session(self):
-		self.target = ClientSession()
+		self.session = ClientSession()
+		self.proxy_sessions = [
+			ClientSession(connector = ProxyConnector.from_url(url)) \
+				for url in self.proxies if url.startswith('socks')
+		]
+
+	async def close_session(self):
+		await gather(
+			self.session.close(),
+			*(session.close() for session in self.proxy_sessions)
+		)
