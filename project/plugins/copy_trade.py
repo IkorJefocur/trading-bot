@@ -73,13 +73,13 @@ class CopyCopytrade(CopyTrade):
 			constraint = self.market.coin(position.symbol).constraint
 
 			if order_to_close:
+				self.user.close_order(order_to_close)
+				self.user.update_position(position)
 				self.service.target.post(
 					'/contract/v3/private/copytrading/order/close',
 					symbol = order_to_close.symbol.value,
 					parent_order_id = self.orders.pop(order_to_close)
 				)
-				self.user.close_order(order_to_close)
-				self.user.update_position(position)
 
 			else:
 				order = position.generate_order()
