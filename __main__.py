@@ -28,7 +28,7 @@ perpetual_market = MarketSync(public_bybit, market = Market())
 copytrading_market = CopytradingMarketSync(public_bybit, market = Market())
 plugins += [perpetual_market, copytrading_market]
 
-http = HTTPClient(config.get('http_proxies', []))
+binance_http = HTTPClient(config.get('binance_http_proxies', []))
 
 traders_watch = {}
 bybit_accounts = {}
@@ -40,8 +40,8 @@ for tag, account in config['accounts'].items():
 		testnet = account.get('testnet', False),
 		key = environ[f'BYBIT_KEY_{tag}'],
 		secret = environ[f'BYBIT_SECRET_{tag}'],
-		http_proxy = config['http_proxies'][len(bybit_accounts)],
-		ws_proxy = config['socks_proxies'][len(bybit_accounts)]
+		http_proxy = config['bybit_http_proxies'][len(bybit_accounts)],
+		ws_proxy = config['bybit_websocket_proxies'][len(bybit_accounts)]
 	)
 	perpetual = UserSync(bybit, user = User(0))
 	copytrading = CopytradingUserSync(bybit, user = User(0))
@@ -51,7 +51,7 @@ for tag, account in config['accounts'].items():
 	for uid, trader in account['traders'].items():
 		if uid not in traders_watch:
 			traders_watch[uid] = BinanceTraderProfitableWatch(
-				http,
+				binance_http,
 				trader = Trader(),
 				uid = uid
 			)
