@@ -2,6 +2,7 @@ from datetime import timedelta, date, time, datetime, timezone
 from asyncio import sleep, exceptions as asyncexc
 from events import Events
 from aiohttp import ClientTimeout, ClientError
+from traceback import print_exc
 from ..base import Plugin
 from ..models.position import Symbol, Profit, PlacedPosition
 
@@ -49,6 +50,7 @@ class BinanceTraderWatch(Plugin):
 			pnl = float(data[1]['value'])
 
 		except (ClientError, LookupError, ValueError, asyncexc.TimeoutError):
+			print_exc()
 			return 10
 
 		performance = self.trader.performance('daily')
@@ -69,8 +71,10 @@ class BinanceTraderWatch(Plugin):
 			current = list(data['otherPositionRetList'])
 
 		except (ClientError, LookupError, TypeError):
+			print_exc()
 			return 10
 		except asyncexc.TimeoutError:
+			print_exc()
 			return 5
 
 		received = {}
