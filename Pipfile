@@ -13,6 +13,7 @@ aiohttp = "*"
 pybit = {git = "https://github.com/IkorJefocur/pybit"}
 websocket-client = {extras = ["optional"], version = "*"}
 aiohttp-socks = "*"
+requests = {extras = ["socks"], version = "*"}
 
 [dev-packages]
 
