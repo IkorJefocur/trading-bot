@@ -113,7 +113,7 @@ class BinanceTraderWatch(Plugin):
 
 	@Plugin.loop_bound
 	async def trader_related_request(self, url):
-		return await (await self.service.target.post(
+		return await (await self.service.get_session().post(
 			url,
 			json = {'tradeType': 'PERPETUAL', 'encryptedUid': self.id},
 			proxy = self.service.get_proxy(),
