@@ -36,7 +36,7 @@ class BinanceTraderWatch(Plugin):
 
 			sleep_time = await self.update_positions()
 			self.events.trader_fetched()
-			await sleep(sleep_time or 0)
+			await sleep(max(sleep_time or 0, .3))
 
 	@Plugin.loop_bound
 	async def update_performance(self):
@@ -75,7 +75,7 @@ class BinanceTraderWatch(Plugin):
 			return 10
 		except asyncexc.TimeoutError:
 			print_exc()
-			return 5
+			return 1
 
 		received = {}
 		for cur_pos in current:
