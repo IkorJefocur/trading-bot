@@ -68,7 +68,7 @@ class BinanceTraderWatch(Plugin):
 				'https://www.binance.com/bapi/futures/v1/public'
 				+ '/future/leaderboard/getOtherPosition'
 			))['data']
-			current = list(data['otherPositionRetList'])
+			current = list(data['otherPositionRetList'] or [])
 
 		except (ClientError, LookupError, TypeError):
 			print_exc()
