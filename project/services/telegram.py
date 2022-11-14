@@ -7,9 +7,7 @@ class Telegram(Service):
 		super().__init__(TelegramClient(None, api_id, api_hash))
 
 	def login(self, **params):
-		async def async_login():
-			await self.target.start(**params)
-		self.loop.run_until_complete(async_login())
+		self.loop.run_until_complete(self.target.start(**params))
 		return self
 
 	def run(self):
