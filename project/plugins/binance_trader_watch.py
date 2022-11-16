@@ -1,7 +1,7 @@
 from datetime import timedelta, date, time, datetime, timezone
-from asyncio import sleep, exceptions as asyncexc
+from asyncio import sleep
 from events import Events
-from aiohttp import ClientTimeout, ClientError
+from aiohttp import ClientTimeout
 from traceback import print_exc
 from ..base import Plugin
 from ..models.position import Symbol, Profit, PlacedPosition
@@ -31,29 +31,32 @@ class BinanceTraderWatch(Plugin):
 
 		while True:
 			if performance_update_time <= datetime.now():
-				sleep_time = await self.update_performance()
+				try:
+					sleep_time = await self.update_performance()
+				except Exception:
+					print_exc()
+					sleep_time = 10
 				performance_update_time = \
 					datetime.now() + timedelta(seconds = sleep_time or 0)
 
-			sleep_time = await self.update_positions()
-			self.events.trader_fetched()
+			try:
+				sleep_time = await self.update_positions()
+				self.events.trader_fetched()
+			except Exception:
+				print_exc()
+				sleep_time = 1
 			check_rate = self.check_rate / self.service.proxies_count
 			await sleep(max(sleep_time or 0, .3) * check_rate)
 
 	@Plugin.loop_bound
 	async def update_performance(self):
-		try:
-			data = (await self.trader_related_request(
-				'https://www.binance.com/bapi/futures/v1/public'
-				+ '/future/leaderboard/getOtherPerformance'
-			))['data']
+		data = (await self.trader_related_request(
+			'https://www.binance.com/bapi/futures/v1/public'
+			+ '/future/leaderboard/getOtherPerformance'
+		))['data']
 
-			roi = float(data[0]['value'])
-			pnl = float(data[1]['value'])
-
-		except (ClientError, LookupError, ValueError, asyncexc.TimeoutError):
-			print_exc()
-			return 10
+		roi = float(data[0]['value'])
+		pnl = float(data[1]['value'])
 
 		performance = self.trader.performance('daily')
 		performance.current_profit = Profit(roi, pnl)
@@ -65,19 +68,11 @@ class BinanceTraderWatch(Plugin):
 
 	@Plugin.loop_bound
 	async def update_positions(self):
-		try:
-			data = (await self.trader_related_request(
-				'https://www.binance.com/bapi/futures/v1/public'
-				+ '/future/leaderboard/getOtherPosition'
-			))['data']
-			current = list(data['otherPositionRetList'] or [])
-
-		except (ClientError, LookupError, TypeError):
-			print_exc()
-			return 10
-		except asyncexc.TimeoutError:
-			print_exc()
-			return 1
+		data = (await self.trader_related_request(
+			'https://www.binance.com/bapi/futures/v1/public'
+			+ '/future/leaderboard/getOtherPosition'
+		))['data']
+		current = list(data['otherPositionRetList'] or [])
 
 		received = {}
 		for cur_pos in current:
@@ -91,6 +86,7 @@ class BinanceTraderWatch(Plugin):
 				leverage = int(cur_pos['leverage'])
 
 			except (LookupError, ValueError, TypeError):
+				print_exc()
 				continue
 
 			position = PlacedPosition(
