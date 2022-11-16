@@ -140,7 +140,7 @@ class BinanceTraderSafeWatch(BinanceTraderWatch):
 			return
 
 		categories = {self.trader.deal_category(pos) for pos in positions}
-		for category in self.opened_before_start:
+		for category in [*self.opened_before_start]:
 			if category not in categories:
 				self.opened_before_start.remove(category)
 
