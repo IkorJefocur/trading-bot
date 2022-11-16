@@ -18,7 +18,7 @@ class CopyTrade(Plugin):
 		self.allowed_symbols = allowed_symbols and {*allowed_symbols}
 
 	async def copy_position(self, base):
-		if self.filter_position(base):
+		if self.market.coin(base.symbol) and self.filter_position(base):
 			await self.set_leverage(base.symbol, base.leverage)
 			await self.copy_position_strategy(base)
 
