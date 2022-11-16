@@ -8,7 +8,7 @@ from ..models.position import Symbol, Profit, PlacedPosition
 
 class BinanceTraderWatch(Plugin):
 
-	def __init__(self, http_service, trader, uid):
+	def __init__(self, http_service, trader, uid, check_rate = 1):
 		super().__init__(http_service)
 		self.events = Events((
 			'trader_fetched',
@@ -20,6 +20,7 @@ class BinanceTraderWatch(Plugin):
 
 		self.trader = trader
 		self.id = uid
+		self.check_rate = check_rate
 
 	def start_lifecycle(self):
 		super().start_lifecycle()
@@ -36,7 +37,8 @@ class BinanceTraderWatch(Plugin):
 
 			sleep_time = await self.update_positions()
 			self.events.trader_fetched()
-			await sleep(max(sleep_time or 0, .3))
+			check_rate = self.check_rate / self.service.proxies_count
+			await sleep(max(sleep_time or 0, .3) * check_rate)
 
 	@Plugin.loop_bound
 	async def update_performance(self):
@@ -128,8 +130,8 @@ class BinanceTraderWatch(Plugin):
 
 class BinanceTraderSafeWatch(BinanceTraderWatch):
 
-	def __init__(self, http_service, trader, uid):
-		super().__init__(http_service, trader, uid)
+	def __init__(self, http_service, trader, uid, check_rate = 1):
+		super().__init__(http_service, trader, uid, check_rate)
 		self.starting_point = None
 		self.opened_before_start = set()
 

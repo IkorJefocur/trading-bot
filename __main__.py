@@ -29,8 +29,20 @@ copytrading_market = CopytradingMarketSync(public_bybit, market = Market())
 plugins += [perpetual_market, copytrading_market]
 
 binance_http = HTTPClient(config.get('binance_http_proxies', []))
-
 traders_watch = {}
+
+for account in config['accounts'].values():
+	for uid in account['traders']:
+		if uid not in traders_watch:
+			traders_watch[uid] = None
+for uid in traders_watch:
+	traders_watch[uid] = BinanceTraderProfitableWatch(
+		binance_http,
+		trader = Trader(),
+		uid = uid,
+		check_rate = len(traders_watch)
+	)
+
 bybit_accounts = {}
 allowed_symbols = [Symbol(val) for val in config['traders_symbols']] \
 	if 'traders_symbols' in config else None
@@ -49,12 +61,6 @@ for tag, account in config['accounts'].items():
 	plugins += [perpetual, copytrading]
 
 	for uid, trader in account['traders'].items():
-		if uid not in traders_watch:
-			traders_watch[uid] = BinanceTraderProfitableWatch(
-				binance_http,
-				trader = Trader(),
-				uid = uid
-			)
 		watch = traders_watch[uid]
 
 		copy = CopyTrade(

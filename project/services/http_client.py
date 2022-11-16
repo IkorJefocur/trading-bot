@@ -14,6 +14,10 @@ class HTTPClient(Service):
 			[proxy for proxy in proxies if proxy.startswith('socks')]
 		self.proxy_sessions = []
 
+	@property
+	def proxies_count(self):
+		return len(self.socks_proxies) or len(self.http_proxies)
+
 	def run(self):
 		self.loop.run_until_complete(self.update_session())
 		super().run()
