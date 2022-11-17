@@ -24,10 +24,14 @@ if path.isfile('config.json'):
 	config = load(open('config.json', 'r'))
 plugins = []
 
-public_bybit = Bybit(testnet = config.get('bybit_testnet', False))
+public_bybit = Bybit(testnet = False)
 perpetual_market = MarketSync(public_bybit, market = Market())
 copytrading_market = CopytradingMarketSync(public_bybit, market = Market())
+test_bybit = Bybit(testnet = True)
+test_perpetual_market = MarketSync(test_bybit, market = Market())
+test_copytrading_market = CopytradingMarketSync(test_bybit, market = Market())
 plugins += [perpetual_market, copytrading_market]
+plugins += [test_perpetual_market, test_copytrading_market]
 
 binance_http = HTTPClient(config.get('binance_http_proxies', []))
 traders_watch = {}
@@ -49,8 +53,9 @@ allowed_symbols = [Symbol(val) for val in config['traders_symbols']] \
 	if 'traders_symbols' in config else None
 
 for tag, account in config['accounts'].items():
+	testnet = account.get('testnet', False)
 	bybit = Bybit(
-		testnet = account.get('testnet', False),
+		testnet = testnet,
 		key = environ[f'BYBIT_KEY_{tag}'],
 		secret = environ[f'BYBIT_SECRET_{tag}'],
 		http_proxy = config['bybit_http_proxies'][len(bybit_accounts)],
@@ -66,7 +71,8 @@ for tag, account in config['accounts'].items():
 
 		copy = CopyTrade(
 			bybit,
-			market = perpetual_market.market,
+			market = test_perpetual_market.market if testnet \
+				else perpetual_market.market,
 			user = perpetual.user,
 			trader = watch.trader,
 			trading_strategy = TradingStrategy(
@@ -78,7 +84,8 @@ for tag, account in config['accounts'].items():
 		)
 		copytrade = CopyCopytrade(
 			bybit,
-			market = copytrading_market.market,
+			market = test_copytrading_market.market if testnet \
+				else copytrading_market.market,
 			user = copytrading.user,
 			trader = watch.trader,
 			trading_strategy = CopytradingStrategy(
