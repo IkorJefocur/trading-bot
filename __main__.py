@@ -2,8 +2,8 @@ from sys import exit
 from os import environ, path, makedirs
 from signal import signal, SIGINT, SIGTERM
 from asyncio import new_event_loop
-from json import load
 from traceback import print_exc
+from yaml import load, CLoader
 from dotenv import load_dotenv
 from project.models.position import Symbol
 from project.models.market import Market
@@ -20,8 +20,8 @@ from project.plugins.file_dump import FileDump
 
 load_dotenv('.env')
 config = {}
-if path.isfile('config.json'):
-	config = load(open('config.json', 'r'))
+if path.isfile('config.yaml'):
+	config = load(open('config.yaml', 'r'), CLoader)
 plugins = []
 
 public_bybit = Bybit(testnet = False)

@@ -1,5 +1,5 @@
 .env
-config.json
+config.yaml
 log.txt
 pid.txt
 db
