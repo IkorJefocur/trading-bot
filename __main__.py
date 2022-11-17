@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from project.models.position import Symbol
 from project.models.market import Market
 from project.models.trader import Trader, User
+from project.models.meta import TraderMeta
 from project.models.strategy import TradingStrategy, CopytradingStrategy
 from project.services.http_client import HTTPClient
 from project.services.bybit import Bybit
@@ -39,7 +40,7 @@ for uid in traders_watch:
 	traders_watch[uid] = BinanceTraderProfitableWatch(
 		binance_http,
 		trader = Trader(),
-		uid = uid,
+		meta = TraderMeta(uid),
 		check_rate = len(traders_watch)
 	)
 

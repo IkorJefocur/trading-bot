@@ -8,7 +8,7 @@ from ..models.position import Symbol, Profit, PlacedPosition
 
 class BinanceTraderWatch(Plugin):
 
-	def __init__(self, http_service, trader, uid, check_rate = 1):
+	def __init__(self, http_service, trader, meta, check_rate = 1):
 		super().__init__(http_service)
 		self.events = Events((
 			'trader_fetched',
@@ -19,11 +19,12 @@ class BinanceTraderWatch(Plugin):
 		self.http_timeout = ClientTimeout(total = 5)
 
 		self.trader = trader
-		self.id = uid
+		self.trader_meta = meta
 		self.check_rate = check_rate
 
 	def start_lifecycle(self):
 		super().start_lifecycle()
+		self.service.run_task_sync(self.update_meta())
 		self.service.send_task(self.watch())
 
 	async def watch(self):
@@ -47,6 +48,16 @@ class BinanceTraderWatch(Plugin):
 				sleep_time = 1
 			check_rate = self.check_rate / self.service.proxies_count
 			await sleep(max(sleep_time or 0, .3) * check_rate)
+
+	@Plugin.loop_bound
+	async def update_meta(self):
+		data = (await self.trader_related_request(
+			'https://www.binance.com/bapi/futures/v2/public'
+			+ '/future/leaderboard/getOtherLeaderboardBaseInfo',
+			trade_type = None
+		))['data']
+
+		self.trader_meta.nickname = data['nickName']
 
 	@Plugin.loop_bound
 	async def update_performance(self):
@@ -110,10 +121,13 @@ class BinanceTraderWatch(Plugin):
 			event(position)
 
 	@Plugin.loop_bound
-	async def trader_related_request(self, url):
+	async def trader_related_request(self, url, trade_type = 'PERPETUAL'):
 		return await (await self.service.get_session().post(
 			url,
-			json = {'tradeType': 'PERPETUAL', 'encryptedUid': self.id},
+			json = {
+				**({'tradeType': trade_type} if trade_type else {}),
+				'encryptedUid': self.trader_meta.id
+			},
 			proxy = self.service.get_proxy(),
 			raise_for_status = True,
 			timeout = self.http_timeout
@@ -126,8 +140,8 @@ class BinanceTraderWatch(Plugin):
 
 class BinanceTraderSafeWatch(BinanceTraderWatch):
 
-	def __init__(self, http_service, trader, uid, check_rate = 1):
-		super().__init__(http_service, trader, uid, check_rate)
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
 		self.starting_point = None
 		self.opened_before_start = set()
 
