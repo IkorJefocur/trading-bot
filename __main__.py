@@ -2,6 +2,7 @@ from sys import exit
 from os import environ, path, makedirs
 from signal import signal, SIGINT, SIGTERM
 from asyncio import new_event_loop
+from itertools import chain
 from traceback import print_exc
 from yaml import load, CLoader
 from dotenv import load_dotenv
@@ -12,10 +13,12 @@ from project.models.meta import TraderMeta
 from project.models.strategy import TradingStrategy, CopytradingStrategy
 from project.services.http_client import HTTPClient
 from project.services.bybit import Bybit
+from project.services.telegram import Telegram
 from project.plugins.binance_trader_watch import BinanceTraderProfitableWatch
 from project.plugins.user_sync import UserSync, CopytradingUserSync
 from project.plugins.market_sync import MarketSync, CopytradingMarketSync
 from project.plugins.copy_trade import CopyTrade, CopyCopytrade
+from project.plugins.telegram_trade_log import TelegramTradeLog
 from project.plugins.file_dump import FileDump
 
 load_dotenv('.env')
@@ -34,12 +37,12 @@ plugins += [perpetual_market, copytrading_market]
 plugins += [test_perpetual_market, test_copytrading_market]
 
 binance_http = HTTPClient(config.get('binance_http_proxies', []))
-traders_watch = {}
-
-for account in config['accounts'].values():
-	for uid in account['traders']:
-		if uid not in traders_watch:
-			traders_watch[uid] = None
+traders_watch = {uid: None for uid in chain(
+	chain.from_iterable(
+		account['traders'] for account in config['accounts'].values()
+	),
+	config['telegram_log_traders']
+)}
 for uid in traders_watch:
 	traders_watch[uid] = BinanceTraderProfitableWatch(
 		binance_http,
@@ -101,6 +104,24 @@ for tag, account in config['accounts'].items():
 		watch.events.position_updated += copytrade.copy_position
 
 		plugins += [copy, copytrade]
+
+if 'telegram_log_chat' in config:
+	telegram = Telegram(
+		api_id = environ['TELEGRAM_ID'],
+		api_hash = environ['TELEGRAM_HASH'],
+		token = environ.get('TELEGRAM_TOKEN')
+	)
+	telegram_log = TelegramTradeLog(
+		telegram,
+		chat = config['telegram_log_chat']
+	)
+	for uid in config['telegram_log_traders']:
+		watch = traders_watch[uid]
+		watch.events.position_updated += \
+			lambda p, t = watch.trader, m = watch.trader_meta: \
+				telegram_log.log_position(p, t, m)
+	plugins += [telegram_log]
+
 plugins += [*traders_watch.values()]
 
 for plugin in plugins:
