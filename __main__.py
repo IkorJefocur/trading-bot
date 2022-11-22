@@ -2,7 +2,6 @@ from sys import exit
 from os import environ, path, makedirs
 from signal import signal, SIGINT, SIGTERM
 from asyncio import new_event_loop
-from itertools import chain
 from traceback import print_exc
 from yaml import load, CLoader
 from dotenv import load_dotenv
@@ -21,6 +20,7 @@ from project.plugins.copy_trade import CopyTrade, CopyCopytrade
 from project.plugins.telegram_trade_log import TelegramTradeLog
 from project.plugins.file_dump import FileDump
 
+modes = ('perpetual', 'copytrading')
 load_dotenv('.env')
 config = {}
 if path.isfile('config.yaml'):
@@ -38,12 +38,11 @@ plugins += [test_perpetual_market, test_copytrading_market]
 
 fast_binance_http = HTTPClient(config.get('fast_binance_http_proxies', []))
 slow_binance_http = HTTPClient(config.get('binance_http_proxies', []))
-traders_watch = {
-	**{uid: False for uid in config['telegram_log_traders']},
-	**{uid: True for uid in chain.from_iterable(
-		account['traders'] for account in config['accounts'].values()
-	)}
-}
+traders_watch = {uid: False for uid in config['telegram_log_traders']}
+for account in config['accounts'].values():
+	for mode in modes:
+		if mode in account:
+			traders_watch.update({uid: True for uid in account[mode]['traders']})
 for uid, fast in traders_watch.items():
 	traders_watch[uid] = BinanceTraderProfitableWatch(
 		fast_binance_http if fast else slow_binance_http,
@@ -65,46 +64,48 @@ for tag, account in config['accounts'].items():
 		http_proxy = config['bybit_http_proxies'][len(bybit_accounts)],
 		ws_proxy = config['bybit_websocket_proxies'][len(bybit_accounts)]
 	)
-	perpetual = UserSync(bybit, user = User(0))
-	copytrading = CopytradingUserSync(bybit, user = User(0))
-	bybit_accounts[tag] = {'perpetual': perpetual, 'copytrading': copytrading}
-	plugins += [perpetual, copytrading]
+	bybit_accounts[tag] = {}
 
-	for uid, trader in account['traders'].items():
-		watch = traders_watch[uid]
+	for mode in ('perpetual', 'copytrading'):
+		if mode in account:
+			user = UserSync(bybit, user = User(0)) if mode == 'perpetual' \
+				else CopytradingUserSync(bybit, user = User(0))
+			bybit_accounts[tag][mode] = user
+			plugins += [user]
 
-		copy = CopyTrade(
-			bybit,
-			market = test_perpetual_market.market if testnet \
-				else perpetual_market.market,
-			user = perpetual.user,
-			trader = watch.trader,
-			trading_strategy = TradingStrategy(
-				account.get('leverage'),
-				trader['deposit_portion'],
-				trader.get('copy_amount_portion')
-			),
-			allowed_symbols = allowed_symbols
-		)
-		copytrade = CopyCopytrade(
-			bybit,
-			market = test_copytrading_market.market if testnet \
-				else copytrading_market.market,
-			user = copytrading.user,
-			trader = watch.trader,
-			trading_strategy = CopytradingStrategy(
-				account.get('leverage'),
-				account.get('per_order_margin', None),
-				account.get('per_order_margin_portion', 1),
-				trader['deposit_portion'],
-				trader.get('copy_amount_portion')
-			),
-			allowed_symbols = allowed_symbols
-		)
-		watch.events.position_updated += copy.copy_position
-		watch.events.position_updated += copytrade.copy_position
+			for uid, trader in account[mode]['traders'].items():
+				watch = traders_watch[uid]
 
-		plugins += [copy, copytrade]
+				copy = CopyTrade(
+					bybit,
+					market = test_perpetual_market.market if testnet \
+						else perpetual_market.market,
+					user = user.user,
+					trader = watch.trader,
+					trading_strategy = TradingStrategy(
+						account[mode].get('leverage'),
+						trader['deposit_portion'],
+						trader.get('copy_amount_portion')
+					),
+					allowed_symbols = allowed_symbols
+				) if mode == 'perpetual' else CopyCopytrade(
+					bybit,
+					market = test_copytrading_market.market if testnet \
+						else copytrading_market.market,
+					user = user.user,
+					trader = watch.trader,
+					trading_strategy = CopytradingStrategy(
+						account[mode].get('leverage'),
+						account[mode].get('per_order_margin', None),
+						account[mode].get('per_order_margin_portion', 1),
+						trader['deposit_portion'],
+						trader.get('copy_amount_portion')
+					),
+					allowed_symbols = allowed_symbols
+				)
+
+				watch.events.position_updated += copy.copy_position
+				plugins += [copy]
 
 if 'telegram_log_chat' in config:
 	telegram = Telegram(
@@ -129,10 +130,12 @@ for plugin in plugins:
 	plugin.start_lifecycle()
 print('=== STARTED ===')
 for tag, bybit in bybit_accounts.items():
-	perpetual_depo = bybit['perpetual'].user.deposit
-	copytrading_depo = bybit['copytrading'].user.deposit
-	print(f'Perpetual balance of {tag}: {perpetual_depo} USDT')
-	print(f'Copytrading balance of {tag}: {copytrading_depo} USDT')
+	if 'perpetual' in bybit:
+		depo = bybit['perpetual'].user.deposit
+		print(f'Perpetual balance of {tag}: {depo} USDT')
+	if 'copytrading' in bybit:
+		depo = bybit['copytrading'].user.deposit
+		print(f'Copytrading balance of {tag}: {depo} USDT')
 
 def soft_exit(*_):
 	for plugin in plugins:
