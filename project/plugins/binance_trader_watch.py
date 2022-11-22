@@ -16,7 +16,7 @@ class BinanceTraderWatch(Plugin):
 			'position_updated', 'position_opened', 'position_closed',
 			'position_increased', 'position_decreased'
 		))
-		self.http_timeout = ClientTimeout(total = 5)
+		self.http_timeout = ClientTimeout(total = 3)
 
 		self.trader = trader
 		self.trader_meta = meta
