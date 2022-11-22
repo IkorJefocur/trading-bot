@@ -48,7 +48,7 @@ for uid in traders_watch:
 		binance_http,
 		trader = Trader(),
 		meta = TraderMeta(uid),
-		check_rate = len(traders_watch)
+		check_rate = len(traders_watch) * config.get('binance_check_rate', 1)
 	)
 
 bybit_accounts = {}

@@ -45,9 +45,9 @@ class BinanceTraderWatch(Plugin):
 				self.events.trader_fetched()
 			except Exception:
 				print_exc()
-				sleep_time = 1
+				sleep_time = 2
 			check_rate = self.check_rate / self.service.proxies_count
-			await sleep(max(sleep_time or 0, .3) * check_rate)
+			await sleep(max(sleep_time or 0, 1) * check_rate)
 
 	@Plugin.loop_bound
 	async def update_meta(self):
