@@ -23,6 +23,8 @@ class Bybit(Service):
 		self, key = None, secret = None, testnet = False,
 		http_proxy = '', ws_proxy = ''
 	):
+		super().__init__()
+
 		http_params = {
 			'endpoint': 'https://api-testnet.bybit.com' if testnet \
 				else 'https://api.bybit.com',
@@ -35,7 +37,7 @@ class Bybit(Service):
 			**self.ws_proxy_params(ws_proxy)
 		}
 
-		super().__init__(HTTP(**http_params))
+		self.http = HTTP(**http_params)
 		self.ws_public = WebSocketProxy(WebSocket(**ws_params))
 		self.ws_private = WebSocketProxy(WebSocket(True, **ws_params))
 		self.usdt_perpetual = usdt_perpetual.HTTP(**http_params)

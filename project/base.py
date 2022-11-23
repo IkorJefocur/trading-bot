@@ -5,12 +5,10 @@ from threading import Thread
 
 class Service:
 
-	def __init__(self, target):
+	def __init__(self):
 		self.loop = new_event_loop()
 		self.thread = None
 		self.plugins_count = 0
-
-		self.target = target
 
 	def start_lifecycle(self):
 		self.plugins_count += 1

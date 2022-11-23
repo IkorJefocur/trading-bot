@@ -7,7 +7,7 @@ from ..base import Service
 class HTTPClient(Service):
 
 	def __init__(self, proxies = []):
-		super().__init__(None)
+		super().__init__()
 		self.http_proxies = \
 			[proxy for proxy in proxies if proxy.startswith('http')]
 		self.socks_proxies = \
@@ -29,14 +29,14 @@ class HTTPClient(Service):
 	def get_session(self):
 		return self.proxy_sessions[randint(0, len(self.proxy_sessions) - 1)] \
 			if len(self.proxy_sessions) > 0 \
-			else self.target
+			else self.main_session
 
 	def get_proxy(self):
 		return self.http_proxies[randint(0, len(self.http_proxies) - 1)] \
 			if len(self.http_proxies) > 0 else None
 
 	async def update_session(self):
-		self.target = ClientSession()
+		self.main_session = ClientSession()
 		self.proxy_sessions = [
 			ClientSession(connector = ProxyConnector.from_url(url)) \
 				for url in self.socks_proxies
@@ -44,6 +44,6 @@ class HTTPClient(Service):
 
 	async def close_session(self):
 		await gather(
-			self.target.close(),
+			self.main_session.close(),
 			*(session.close() for session in self.proxy_sessions)
 		)

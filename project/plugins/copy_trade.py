@@ -75,7 +75,7 @@ class CopyCopytrade(CopyTrade):
 			if order_to_close:
 				self.user.close_order(order_to_close)
 				self.user.update_position(position)
-				self.service.target.post(
+				self.service.http.post(
 					'/contract/v3/private/copytrading/order/close',
 					symbol = order_to_close.symbol.value,
 					parent_order_id = self.orders.pop(order_to_close)
@@ -83,7 +83,7 @@ class CopyCopytrade(CopyTrade):
 
 			else:
 				order = position.generate_order()
-				self.orders[order] = self.service.target.post(
+				self.orders[order] = self.service.http.post(
 					'/contract/v3/private/copytrading/order/create',
 					side = 'Buy' if order.long else 'Sell',
 					symbol = order.symbol.value,
@@ -97,7 +97,7 @@ class CopyCopytrade(CopyTrade):
 	async def set_leverage(self, symbol, leverage):
 		not_modified_code = 34036
 		try:
-			self.service.target.post(
+			self.service.http.post(
 				'/contract/v3/private/copytrading/position/set-leverage',
 				symbol = symbol.value,
 				buy_leverage = str(leverage),

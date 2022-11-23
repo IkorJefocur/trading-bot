@@ -25,7 +25,7 @@ class UserSync(Plugin):
 class CopytradingUserSync(UserSync):
 
 	async def init(self):
-		self.user.deposit = float(self.service.target.get(
+		self.user.deposit = float(self.service.http.get(
 			'/contract/v3/private/copytrading/wallet/balance',
 			coin = 'USDT'
 		)['result']['walletBalance'])

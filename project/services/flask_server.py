@@ -5,7 +5,8 @@ from ..base import Service
 class FlaskServer(Service):
 
 	def __init__(self, name, local = False):
-		super().__init__(Flask(name))
+		super().__init__()
+		self.server = Flask(name)
 		self.local = local
 
 	def start_lifecycle(self):

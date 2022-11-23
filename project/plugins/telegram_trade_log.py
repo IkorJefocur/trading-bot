@@ -11,7 +11,7 @@ class TelegramTradeLog(Plugin):
 
 	@Plugin.loop_bound
 	async def log_position(self, position, trader, meta):
-		message = await self.service.target.send_message(
+		message = await self.service.client.send_message(
 			self.chat_id,
 			self.format_position(position, trader, meta),
 			reply_to = position.prev and self.messages.get(position.prev),

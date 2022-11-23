@@ -27,7 +27,7 @@ class MarketSync(Plugin):
 class CopytradingMarketSync(MarketSync):
 
 	async def init(self):
-		for symbol in self.service.target.get(
+		for symbol in self.service.http.get(
 			'/contract/v3/public/copytrading/symbol/list'
 		)['result']['list']:
 			if Symbol.valid(symbol['symbol']):
