@@ -45,14 +45,17 @@ class TelegramTradeLog(Plugin):
 				f': {position.price:g}\n'
 					if position.prev else ''
 			) + (
-				f'Объем: {position.amount:g} {position.symbol.coin} | '
-				f'{position.total_price / trader.deposit * 100}% от депозита\n'
+				f'Объем: {position.amount:g} {position.symbol.coin}' + (
+					f' | {position.total_price / trader.deposit * 100}% от депозита'
+						if trader.deposit else ''
+				) + '\n'
 					if not position.closed else ''
 			) + (
 				f'Изменение объема: {order.amount:g} {position.symbol.coin} | '
-				f'{order.amount / position.amount * 100}% | '
-				f'{order.total_price / trader.deposit * 100}'
-				'% от депозита\n'
+				f'{order.amount / position.amount * 100}%' + (
+					f' | {order.total_price / trader.deposit * 100}% от депозита'
+						if trader.deposit else ''
+				) + '\n'
 					if position.prev else ''
 			) + '\n'
 
