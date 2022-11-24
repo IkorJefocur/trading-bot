@@ -36,8 +36,14 @@ test_copytrading_market = CopytradingMarketSync(test_bybit, market = Market())
 plugins += [perpetual_market, copytrading_market]
 plugins += [test_perpetual_market, test_copytrading_market]
 
-fast_binance_http = HTTPClient(config.get('fast_binance_http_proxies', []))
-slow_binance_http = HTTPClient(config.get('binance_http_proxies', []))
+fast_binance_http = HTTPClient(
+	proxies = config.get('fast_binance_http_proxies', []),
+	timeout = config.get('fast_binance_timeout', 10)
+)
+slow_binance_http = HTTPClient(
+	proxies = config.get('binance_http_proxies', []),
+	timeout = config.get('binance_timeout', 10)
+)
 traders_watch = {uid: False for uid in config['telegram_log_traders']}
 for account in config['accounts'].values():
 	for mode in modes:

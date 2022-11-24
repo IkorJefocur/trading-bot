@@ -16,7 +16,6 @@ class BinanceTraderWatch(Plugin):
 			'position_updated', 'position_opened', 'position_closed',
 			'position_increased', 'position_decreased'
 		))
-		self.http_timeout = ClientTimeout(total = 3)
 
 		self.trader = trader
 		self.trader_meta = meta
@@ -130,8 +129,7 @@ class BinanceTraderWatch(Plugin):
 				'encryptedUid': self.trader_meta.id
 			},
 			proxy = self.service.get_proxy(),
-			raise_for_status = True,
-			timeout = self.http_timeout
+			raise_for_status = True
 		)).json()
 
 	def prepare_available_positions(self, positions):
