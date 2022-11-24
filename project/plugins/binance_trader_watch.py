@@ -34,11 +34,12 @@ class BinanceTraderWatch(Plugin):
 			if performance_update_time <= datetime.now():
 				try:
 					sleep_time = await self.update_performance()
+					performance_update_time = \
+						datetime.now() + timedelta(seconds = sleep_time or 0)
 				except Exception:
 					print_exc()
-					sleep_time = 10
-				performance_update_time = \
-					datetime.now() + timedelta(seconds = sleep_time or 0)
+					await sleep(1)
+					continue
 
 			try:
 				sleep_time = await self.update_positions()
