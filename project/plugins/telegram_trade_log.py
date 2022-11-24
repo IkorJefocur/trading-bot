@@ -63,7 +63,7 @@ class TelegramTradeLog(Plugin):
 			f'PNL: {position.profit.pnl:g}\n'
 			+ (
 				f'Разница PNL: '
-				f'{(position.profit.pnl - position.prev.profit.pnl):g}'
+				f'{(position.profit.pnl - position.prev.profit.pnl):g}\n'
 					if position.prev else ''
 			) +
 			f'ROE: {position.profit.roe}%'
