@@ -162,6 +162,12 @@ class PlacedPosition(Position):
 		return self.time == other.time if isinstance(other, PlacedPosition) \
 			else super().__eq__(other)
 
+	def close(self, profit = None):
+		return PlacedPosition(
+			self.symbol, self.price, 0, profit or self.profit,
+			leverage = self.leverage
+		).chain(self)
+
 class ReflectivePosition(Position):
 
 	@staticmethod
