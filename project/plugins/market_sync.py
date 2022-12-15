@@ -1,12 +1,12 @@
 from ..base import Plugin
 from ..models.position import Symbol
-from ..models.market import CoinConstraint, Coin
+from ..models.market import CoinConstraint, Coin, Market
 
 class MarketSync(Plugin):
 
-	def __init__(self, bybit_service, market):
+	def __init__(self, bybit_service):
 		super().__init__(bybit_service)
-		self.market = market
+		self.market = Market()
 
 	def start_lifecycle(self):
 		super().start_lifecycle()

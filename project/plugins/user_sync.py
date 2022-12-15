@@ -1,10 +1,11 @@
 from ..base import Plugin
+from ..models.trader import User
 
 class UserSync(Plugin):
 
-	def __init__(self, bybit_service, user):
+	def __init__(self, bybit_service):
 		super().__init__(bybit_service)
-		self.user = user
+		self.user = User(0)
 
 	def start_lifecycle(self):
 		super().start_lifecycle()

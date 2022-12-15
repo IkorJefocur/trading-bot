@@ -4,11 +4,13 @@ from events import Events
 from aiohttp import ClientTimeout
 from traceback import print_exc
 from ..base import Plugin
+from ..models.trader import Trader
+from ..models.meta import TraderMeta
 from ..models.position import Symbol, Profit, PlacedPosition
 
 class BinanceTraderWatch(Plugin):
 
-	def __init__(self, http_service, trader, meta, check_rate = 1):
+	def __init__(self, http_service, uid, check_rate = 1):
 		super().__init__(http_service)
 		self.events = Events((
 			'trader_fetched',
@@ -17,8 +19,8 @@ class BinanceTraderWatch(Plugin):
 			'position_increased', 'position_decreased'
 		))
 
-		self.trader = trader
-		self.trader_meta = meta
+		self.trader = Trader()
+		self.trader_meta = TraderMeta(uid)
 		self.check_rate = check_rate
 
 	def start_lifecycle(self):

@@ -6,9 +6,6 @@ from traceback import print_exc
 from yaml import load, CLoader
 from dotenv import load_dotenv
 from project.models.position import Symbol
-from project.models.market import Market
-from project.models.trader import Trader, User
-from project.models.meta import TraderMeta
 from project.models.strategy import TradingStrategy, CopytradingStrategy
 from project.services.http_client import HTTPClient
 from project.services.bybit import Bybit
@@ -28,11 +25,11 @@ if path.isfile('config.yaml'):
 plugins = []
 
 public_bybit = Bybit(testnet = False)
-perpetual_market = MarketSync(public_bybit, market = Market())
-copytrading_market = CopytradingMarketSync(public_bybit, market = Market())
+perpetual_market = MarketSync(public_bybit)
+copytrading_market = CopytradingMarketSync(public_bybit)
 test_bybit = Bybit(testnet = True)
-test_perpetual_market = MarketSync(test_bybit, market = Market())
-test_copytrading_market = CopytradingMarketSync(test_bybit, market = Market())
+test_perpetual_market = MarketSync(test_bybit)
+test_copytrading_market = CopytradingMarketSync(test_bybit)
 plugins += [perpetual_market, copytrading_market]
 plugins += [test_perpetual_market, test_copytrading_market]
 
@@ -52,8 +49,7 @@ for account in config['accounts'].values():
 for uid, fast in traders_watch.items():
 	traders_watch[uid] = BinanceTraderProfitableWatch(
 		fast_binance_http if fast else slow_binance_http,
-		trader = Trader(),
-		meta = TraderMeta(uid),
+		uid = uid,
 		check_rate = len(traders_watch) * config.get('binance_check_rate', 1)
 	)
 
@@ -74,8 +70,8 @@ for tag, account in config['accounts'].items():
 
 	for mode in ('perpetual', 'copytrading'):
 		if mode in account:
-			user = UserSync(bybit, user = User(0)) if mode == 'perpetual' \
-				else CopytradingUserSync(bybit, user = User(0))
+			user = UserSync(bybit) if mode == 'perpetual' \
+				else CopytradingUserSync(bybit)
 			bybit_accounts[tag][mode] = user
 			plugins += [user]
 
