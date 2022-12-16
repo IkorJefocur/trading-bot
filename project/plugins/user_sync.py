@@ -36,4 +36,4 @@ class CopytradingUserSync(UserSync):
 		ws.subscribe('copyTradeWallet', self.update_deposit)
 
 	def update_deposit(self, data):
-		self.user.depoit = data['data']['walletBalance']
+		self.user.deposit = data['data']['walletBalance']
